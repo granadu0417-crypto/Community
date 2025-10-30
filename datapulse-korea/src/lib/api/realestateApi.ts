@@ -17,7 +17,7 @@ const API_MODE = process.env.NEXT_PUBLIC_REALESTATE_API_MODE || 'real'
 // 국토교통부 API 설정
 const REALESTATE_API_KEY = process.env.NEXT_PUBLIC_REALESTATE_API_KEY ||
   'bRfZ97B4aD4dhEcDAZTTYL4i0QvA5lrXzStBTwhEZgv2zJLjnLO5BGjR5UIjsSLodBMC2IzGZd6SBz1qwS6KKQ=='
-const REALESTATE_API_URL = 'http://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade'
+const REALESTATE_API_URL = 'https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev'
 
 // 서울시 구별 법정동코드 매핑
 const REGION_CODE_MAP: Record<string, string> = {
