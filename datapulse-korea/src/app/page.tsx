@@ -1,10 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { Button, Card, Container, Badge } from '@/components/ui'
+import { Button, Card, Container, Loading } from '@/components/ui'
+import { KakaoMap } from '@/components/map'
+import { AreaScoreCard } from '@/components/score'
+import { searchAddress, type GeocoderResult } from '@/lib/utils/kakaoGeocoder'
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
+  const [selectedLocation, setSelectedLocation] = useState({
+    name: '서울 시청',
+    lat: 37.5665,
+    lng: 126.9780,
+  })
+  const [showAreaCard, setShowAreaCard] = useState(false)
 
   const stats = [
     { label: '데이터 소스', value: '12+' },
@@ -46,6 +56,65 @@ export default function Home() {
     { icon: '📈', label: '예산', color: 'bg-lime-100 text-lime-600' },
   ]
 
+  // 모의 점수 데이터 (나중에 실제 API로 교체)
+  const mockScores = [
+    { category: '주거환경', score: 85, color: 'bg-blue-500' },
+    { category: '안전도', score: 92, color: 'bg-green-500' },
+    { category: '문화생활', score: 78, color: 'bg-purple-500' },
+    { category: '교육', score: 88, color: 'bg-pink-500' },
+    { category: '의료', score: 81, color: 'bg-cyan-500' },
+    { category: '환경', score: 83, color: 'bg-teal-500' },
+  ]
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return
+
+    setIsSearching(true)
+    try {
+      const results = await searchAddress(searchQuery)
+      if (results.length > 0) {
+        const result = results[0]
+        setSelectedLocation({
+          name: result.placeName || result.address,
+          lat: result.lat,
+          lng: result.lng,
+        })
+        setShowAreaCard(true)
+
+        // 지도 섹션으로 스크롤
+        document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' })
+      } else {
+        alert('검색 결과가 없습니다. 다른 주소나 장소명을 입력해주세요.')
+      }
+    } catch (error) {
+      console.error('검색 실패:', error)
+      alert('검색 중 오류가 발생했습니다.')
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
+  }
+
+  const handleMapLoad = (map: any, kakao: any) => {
+    // 지도 중앙에 마커 추가
+    const markerPosition = new kakao.maps.LatLng(selectedLocation.lat, selectedLocation.lng)
+    const marker = new kakao.maps.Marker({
+      position: markerPosition,
+    })
+    marker.setMap(map)
+
+    // 인포윈도우 추가
+    const infowindow = new kakao.maps.InfoWindow({
+      content: `<div style="padding:10px;font-size:14px;font-weight:500;">${selectedLocation.name}</div>`,
+    })
+    infowindow.open(map, marker)
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
@@ -62,7 +131,7 @@ export default function Home() {
             </div>
             <nav className="hidden md:flex space-x-8">
               <a href="#" className="text-gray-700 hover:text-blue-600 transition">홈</a>
-              <a href="#" className="text-gray-700 hover:text-blue-600 transition">지역 분석</a>
+              <a href="#map-section" className="text-gray-700 hover:text-blue-600 transition">지역 분석</a>
               <a href="#" className="text-gray-700 hover:text-blue-600 transition">권력 투명성</a>
               <a href="#" className="text-gray-700 hover:text-blue-600 transition">정보</a>
             </nav>
@@ -94,14 +163,17 @@ export default function Home() {
             <div className="relative">
               <input
                 type="text"
-                placeholder="주소나 지역을 검색하세요 (예: 서울시 강남구)"
+                placeholder="주소나 지역을 검색하세요 (예: 서울시 강남구, 강남역)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
                 className="w-full px-6 py-4 pr-32 text-lg border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 transition shadow-lg"
               />
               <Button
                 variant="primary"
                 className="absolute right-2 top-1/2 -translate-y-1/2"
+                onClick={handleSearch}
+                isLoading={isSearching}
               >
                 검색
               </Button>
@@ -126,8 +198,59 @@ export default function Home() {
         </Container>
       </section>
 
+      {/* Interactive Map Section */}
+      <section id="map-section" className="py-20 bg-white">
+        <Container>
+          <div className="text-center mb-12">
+            <h3 className="text-4xl font-bold mb-4">📍 우리 동네 탐색</h3>
+            <p className="text-gray-600">
+              지도에서 원하는 지역을 찾고 상세한 정보를 확인하세요
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* 지도 */}
+            <div className="lg:col-span-2">
+              <KakaoMap
+                width="100%"
+                height="600px"
+                center={{ lat: selectedLocation.lat, lng: selectedLocation.lng }}
+                level={3}
+                onLoad={handleMapLoad}
+                key={`${selectedLocation.lat}-${selectedLocation.lng}`}
+              />
+            </div>
+
+            {/* 지역 정보 카드 */}
+            <div>
+              {showAreaCard ? (
+                <AreaScoreCard
+                  areaName={selectedLocation.name}
+                  address="서울특별시"
+                  totalScore={87}
+                  rank={12}
+                  scores={mockScores}
+                />
+              ) : (
+                <Card variant="bordered" padding="lg" className="h-full flex items-center justify-center">
+                  <div className="text-center text-gray-500">
+                    <div className="text-6xl mb-4">🔍</div>
+                    <p className="font-medium mb-2">지역을 검색해보세요</p>
+                    <p className="text-sm">
+                      검색창에 주소나 장소명을 입력하면
+                      <br />
+                      해당 지역의 상세 정보를 확인할 수 있습니다
+                    </p>
+                  </div>
+                </Card>
+              )}
+            </div>
+          </div>
+        </Container>
+      </section>
+
       {/* Features Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-gradient-to-br from-blue-50 to-purple-50">
         <Container>
           <h3 className="text-4xl font-bold text-center mb-16">
             주요 기능
@@ -150,7 +273,7 @@ export default function Home() {
       </section>
 
       {/* Themes Preview */}
-      <section className="py-20 bg-gradient-to-br from-blue-50 to-purple-50">
+      <section className="py-20 bg-white">
         <Container>
           <h3 className="text-4xl font-bold text-center mb-4">
             12가지 테마로 보는 대한민국
@@ -188,6 +311,7 @@ export default function Home() {
             variant="outline"
             size="lg"
             className="bg-white text-blue-600 hover:bg-gray-50 border-0 shadow-2xl"
+            onClick={() => document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' })}
           >
             내 동네 점수 확인하기
           </Button>
