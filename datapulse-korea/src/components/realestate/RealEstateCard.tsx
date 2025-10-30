@@ -45,7 +45,22 @@ export default function RealEstateCard({ data }: RealEstateCardProps) {
 
       {/* 종합 점수 */}
       <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl text-center">
-        <div className="text-sm text-gray-600 mb-2">부동산 종합 점수</div>
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <div className="text-sm text-gray-600">부동산 종합 점수</div>
+          <div className="group relative">
+            <span className="text-gray-400 cursor-help text-sm">ℹ️</span>
+            <div className="hidden group-hover:block absolute z-10 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg -left-28 top-6">
+              <div className="font-semibold mb-2">점수 계산 기준:</div>
+              <ul className="space-y-1 text-left">
+                <li>• <strong>가격 적정성</strong>: 전국 평균 대비 가격 (70%)</li>
+                <li>• <strong>시장 유동성</strong>: 거래량 및 환금성 (30%)</li>
+              </ul>
+              <div className="mt-2 pt-2 border-t border-gray-700">
+                점수가 높을수록 합리적인 투자 지역입니다
+              </div>
+            </div>
+          </div>
+        </div>
         <div
           className={`text-5xl font-bold bg-gradient-to-r ${getScoreColor(
             data.overallScore
@@ -59,6 +74,20 @@ export default function RealEstateCard({ data }: RealEstateCardProps) {
           {data.overallScore >= 60 && data.overallScore < 80 && '적정한 가격'}
           {data.overallScore >= 40 && data.overallScore < 60 && '다소 높은 가격'}
           {data.overallScore < 40 && '매우 높은 가격'}
+        </div>
+
+        {/* 점수 기준 설명 (항상 표시) */}
+        <div className="mt-4 pt-4 border-t border-blue-200">
+          <div className="text-xs text-gray-600 space-y-1">
+            <div className="flex items-center justify-center gap-2">
+              <span>💰 가격 적정성 ({data.priceScore}점)</span>
+              <span className="text-gray-400">+</span>
+              <span>📊 시장 유동성 ({data.liquidityScore}점)</span>
+            </div>
+            <div className="text-gray-500">
+              = 종합 {data.overallScore}점 (가중평균)
+            </div>
+          </div>
         </div>
       </div>
 
