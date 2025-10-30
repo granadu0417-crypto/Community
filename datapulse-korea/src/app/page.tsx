@@ -4,7 +4,10 @@ import { useState } from 'react'
 import { Button, Card, Container, Loading } from '@/components/ui'
 import { KakaoMap } from '@/components/map'
 import { AreaScoreCard } from '@/components/score'
+import RealEstateCard from '@/components/realestate/RealEstateCard'
 import { searchAddress, type GeocoderResult } from '@/lib/utils/kakaoGeocoder'
+import { getRealEstateByRegion, getRealEstateByCoordinates } from '@/lib/api/realestateApi'
+import { RegionRealEstateStats } from '@/types/realestate'
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -15,6 +18,8 @@ export default function Home() {
     lng: 126.9780,
   })
   const [showAreaCard, setShowAreaCard] = useState(false)
+  const [realEstateData, setRealEstateData] = useState<RegionRealEstateStats | null>(null)
+  const [isLoadingRealEstate, setIsLoadingRealEstate] = useState(false)
 
   const stats = [
     { label: '데이터 소스', value: '12+' },
@@ -81,6 +86,9 @@ export default function Home() {
         })
         setShowAreaCard(true)
 
+        // 부동산 데이터 가져오기
+        await fetchRealEstateData(result.placeName || result.address, result.lat, result.lng)
+
         // 지도 섹션으로 스크롤
         document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' })
       } else {
@@ -91,6 +99,32 @@ export default function Home() {
       alert('검색 중 오류가 발생했습니다.')
     } finally {
       setIsSearching(false)
+    }
+  }
+
+  // 부동산 데이터 가져오기
+  const fetchRealEstateData = async (regionName: string, lat: number, lng: number) => {
+    setIsLoadingRealEstate(true)
+    try {
+      // 먼저 지역명으로 시도
+      const response = await getRealEstateByRegion(regionName)
+      if (response.success && response.data) {
+        setRealEstateData(response.data)
+      } else {
+        // 지역명으로 실패하면 좌표로 시도
+        const coordResponse = await getRealEstateByCoordinates(lat, lng)
+        if (coordResponse.success && coordResponse.data) {
+          setRealEstateData(coordResponse.data)
+        } else {
+          console.log('부동산 데이터를 찾을 수 없습니다:', regionName)
+          setRealEstateData(null)
+        }
+      }
+    } catch (error) {
+      console.error('부동산 데이터 조회 실패:', error)
+      setRealEstateData(null)
+    } finally {
+      setIsLoadingRealEstate(false)
     }
   }
 
@@ -224,13 +258,24 @@ export default function Home() {
             {/* 지역 정보 카드 */}
             <div>
               {showAreaCard ? (
-                <AreaScoreCard
-                  areaName={selectedLocation.name}
-                  address="서울특별시"
-                  totalScore={87}
-                  rank={12}
-                  scores={mockScores}
-                />
+                isLoadingRealEstate ? (
+                  <Card variant="bordered" padding="lg" className="h-full flex items-center justify-center">
+                    <div className="text-center">
+                      <Loading size="lg" />
+                      <p className="mt-4 text-gray-600">부동산 데이터를 불러오는 중...</p>
+                    </div>
+                  </Card>
+                ) : realEstateData ? (
+                  <RealEstateCard data={realEstateData} />
+                ) : (
+                  <AreaScoreCard
+                    areaName={selectedLocation.name}
+                    address="서울특별시"
+                    totalScore={87}
+                    rank={12}
+                    scores={mockScores}
+                  />
+                )
               ) : (
                 <Card variant="bordered" padding="lg" className="h-full flex items-center justify-center">
                   <div className="text-center text-gray-500">
