@@ -12,7 +12,7 @@ import {
 } from '@/data/mockRealEstateData'
 
 // API 모드: 'mock' 또는 'real'
-const API_MODE = process.env.NEXT_PUBLIC_REALESTATE_API_MODE || 'mock'
+const API_MODE = process.env.NEXT_PUBLIC_REALESTATE_API_MODE || 'real'
 
 // 국토교통부 API 설정
 const REALESTATE_API_KEY = process.env.NEXT_PUBLIC_REALESTATE_API_KEY ||
