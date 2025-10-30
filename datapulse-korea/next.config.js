@@ -10,6 +10,8 @@ const nextConfig = {
   // 환경변수
   env: {
     NEXT_PUBLIC_KAKAO_MAP_KEY: process.env.NEXT_PUBLIC_KAKAO_MAP_KEY,
+    NEXT_PUBLIC_REALESTATE_API_MODE: process.env.NEXT_PUBLIC_REALESTATE_API_MODE,
+    NEXT_PUBLIC_REALESTATE_API_KEY: process.env.NEXT_PUBLIC_REALESTATE_API_KEY,
   },
   // 정적 최적화
   reactStrictMode: true,
