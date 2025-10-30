@@ -38,8 +38,8 @@ export const loadKakaoMap = (): Promise<any> => {
 
     isLoading = true
 
-    // API 키 확인
-    const apiKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY
+    // API 키 확인 (임시: 환경변수 문제 테스트를 위해 fallback 추가)
+    const apiKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY || '33f2353a3f14abc7f8e438d1921c6135'
     if (!apiKey) {
       reject(new Error('Kakao Map API 키가 설정되지 않았습니다. .env.local 파일을 확인하세요.'))
       return
