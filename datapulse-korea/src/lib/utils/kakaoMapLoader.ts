@@ -48,7 +48,7 @@ export const loadKakaoMap = (): Promise<any> => {
     // 스크립트 태그 생성
     const script = document.createElement('script')
     script.type = 'text/javascript'
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false`
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&libraries=services&autoload=false`
 
     script.onload = () => {
       // SDK 로드 완료 후 maps 라이브러리 로드
