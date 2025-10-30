@@ -1,0 +1,33 @@
+# Cloudflare Pages 설정
+name = "datapulse-korea"
+compatibility_date = "2024-10-30"
+
+# Pages 프로젝트 설정
+pages_build_output_dir = ".vercel/output/static"
+
+# 환경변수 (로컬 개발용)
+# 실제 값은 .dev.vars 파일에 저장
+[vars]
+ENVIRONMENT = "development"
+
+# KV Namespaces (데이터 캐싱용)
+# [[kv_namespaces]]
+# binding = "DATA_CACHE"
+# id = "your_kv_namespace_id"
+# preview_id = "your_preview_kv_namespace_id"
+
+# D1 Database (추후 추가)
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "datapulse-db"
+# database_id = "your_database_id"
+
+# Workers 설정 (추후 API 프록시용)
+# [build]
+# command = "npm run build"
+
+# [env.production]
+# name = "datapulse-korea-production"
+# routes = [
+#   { pattern = "datapulse.dev", zone_name = "datapulse.dev" }
+# ]
