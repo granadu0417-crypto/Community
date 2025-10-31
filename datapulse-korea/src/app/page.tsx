@@ -8,7 +8,10 @@ import RealEstateCard from '@/components/realestate/RealEstateCard'
 import ThemeSelector from '@/components/theme/ThemeSelector'
 import { searchAddress, type GeocoderResult } from '@/lib/utils/kakaoGeocoder'
 import { getRealEstateByRegion, getRealEstateByCoordinates } from '@/lib/api/realestateApi'
+import { getSafetyByRegion } from '@/lib/api/safetyApi'
 import { RegionRealEstateStats } from '@/types/realestate'
+import { SafetyStats } from '@/types/safety'
+import SafetyCard from '@/components/safety/SafetyCard'
 import { normalizeRegionName, debugAddressInfo, isSeoulAddress } from '@/lib/utils/addressParser'
 import { ThemeType, THEMES } from '@/types/theme'
 
@@ -24,6 +27,8 @@ export default function Home() {
   const [selectedTheme, setSelectedTheme] = useState<ThemeType>('realestate')
   const [realEstateData, setRealEstateData] = useState<RegionRealEstateStats | null>(null)
   const [isLoadingRealEstate, setIsLoadingRealEstate] = useState(false)
+  const [safetyData, setSafetyData] = useState<SafetyStats | null>(null)
+  const [isLoadingSafety, setIsLoadingSafety] = useState(false)
 
   // 인기 지역
   const popularRegions = [
@@ -99,8 +104,11 @@ export default function Home() {
         })
         setShowAreaCard(true)
 
-        // 부동산 데이터 가져오기 (result 전체 전달)
-        await fetchRealEstateData(result)
+        // 데이터 가져오기 (모든 테마 데이터를 병렬로 로드)
+        await Promise.all([
+          fetchRealEstateData(result),
+          fetchSafetyData(result),
+        ])
 
         // 지도 섹션으로 스크롤
         document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' })
@@ -157,6 +165,48 @@ export default function Home() {
     }
   }
 
+  // 안전 데이터 가져오기
+  const fetchSafetyData = async (result: GeocoderResult) => {
+    setIsLoadingSafety(true)
+    try {
+      // 주소 파싱 디버깅
+      debugAddressInfo(result.placeName, result.address)
+
+      // 서울 주소인지 확인
+      if (!isSeoulAddress(result.address)) {
+        console.log('서울 지역이 아닙니다:', result.address)
+        setSafetyData(null)
+        return
+      }
+
+      // 카카오 응답에서 구 이름 추출
+      const normalizedRegion = normalizeRegionName(result.placeName, result.address)
+
+      if (!normalizedRegion) {
+        console.log('서울시 구를 찾을 수 없습니다:', result.address)
+        setSafetyData(null)
+        return
+      }
+
+      console.log('✅ 정규화된 지역명:', normalizedRegion)
+
+      // 정규화된 지역명으로 API 호출
+      const response = await getSafetyByRegion(normalizedRegion)
+      if (response.success && response.data) {
+        setSafetyData(response.data)
+        console.log('✅ 안전 데이터 로드 성공:', response.data)
+      } else {
+        console.log('❌ 안전 데이터 조회 실패:', response.error)
+        setSafetyData(null)
+      }
+    } catch (error) {
+      console.error('❌ 안전 데이터 조회 오류:', error)
+      setSafetyData(null)
+    } finally {
+      setIsLoadingSafety(false)
+    }
+  }
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSearch()
@@ -175,7 +225,13 @@ export default function Home() {
         lng: result.lng,
       })
       setShowAreaCard(true)
-      await fetchRealEstateData(result)
+
+      // 모든 테마 데이터를 병렬로 로드
+      await Promise.all([
+        fetchRealEstateData(result),
+        fetchSafetyData(result),
+      ])
+
       document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' })
     }
   }
@@ -349,6 +405,23 @@ export default function Home() {
                   <div className="text-center text-gray-500">
                     <div className="text-6xl mb-4">📊</div>
                     <p className="font-medium mb-2">부동산 데이터 없음</p>
+                    <p className="text-sm">서울시 구 단위 검색을 해주세요</p>
+                  </div>
+                </Card>
+              ) : isLoadingSafety && selectedTheme === 'safety' ? (
+                <Card variant="bordered" padding="lg" className="flex items-center justify-center min-h-[400px]">
+                  <div className="text-center">
+                    <Loading size="lg" />
+                    <p className="mt-4 text-gray-600">안전 데이터를 불러오는 중...</p>
+                  </div>
+                </Card>
+              ) : selectedTheme === 'safety' && safetyData ? (
+                <SafetyCard data={safetyData} />
+              ) : selectedTheme === 'safety' ? (
+                <Card variant="bordered" padding="lg" className="min-h-[400px] flex items-center justify-center">
+                  <div className="text-center text-gray-500">
+                    <div className="text-6xl mb-4">🛡️</div>
+                    <p className="font-medium mb-2">안전 데이터 없음</p>
                     <p className="text-sm">서울시 구 단위 검색을 해주세요</p>
                   </div>
                 </Card>
