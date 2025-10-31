@@ -9,7 +9,11 @@ import {
   mockCCTVData,
   getAirQualityInfo,
 } from '@/lib/data/mockEnvironmentData'
-import type { LocationSafety } from '@/types/environment'
+import {
+  fetchMultipleStationsAirQuality,
+  SEOUL_STATIONS,
+} from '@/lib/api/environmentApi'
+import type { LocationSafety, AirQualityData } from '@/types/environment'
 
 export default function EnvironmentPage() {
   const [currentLocation, setCurrentLocation] = useState({
@@ -22,6 +26,27 @@ export default function EnvironmentPage() {
     cctv: true,
     weatherWarning: true,
   })
+  const [realAirQualityData, setRealAirQualityData] = useState<AirQualityData[]>([])
+  const [isLoadingRealData, setIsLoadingRealData] = useState(false)
+  const [useRealData, setUseRealData] = useState(false) // 실제 API 사용 여부
+
+  // 실제 대기질 데이터 로드
+  useEffect(() => {
+    if (useRealData) {
+      setIsLoadingRealData(true)
+      // 서울 주요 측정소 데이터 가져오기 (일부만)
+      const stationsToFetch = SEOUL_STATIONS.slice(0, 10) // 처음 10개만
+      fetchMultipleStationsAirQuality(stationsToFetch)
+        .then((data) => {
+          setRealAirQualityData(data)
+          setIsLoadingRealData(false)
+        })
+        .catch((error) => {
+          console.error('실제 대기질 데이터 로드 실패:', error)
+          setIsLoadingRealData(false)
+        })
+    }
+  }, [useRealData])
 
   // 현재 위치 안전 정보 로드
   useEffect(() => {
@@ -44,7 +69,8 @@ export default function EnvironmentPage() {
 
     // 미세먼지 측정소 마커
     if (showLayers.airQuality) {
-      mockAirQualityData.forEach((station) => {
+      const airQualityDataToUse = useRealData ? realAirQualityData : mockAirQualityData
+      airQualityDataToUse.forEach((station) => {
         if (station.lat && station.lng) {
           const airQualityInfo = getAirQualityInfo(station.khaiGrade)
 
@@ -153,6 +179,17 @@ export default function EnvironmentPage() {
             {/* 레이어 토글 */}
             <div className="flex gap-2">
               <button
+                onClick={() => setUseRealData(!useRealData)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  useRealData
+                    ? 'bg-green-100 text-green-700 border-2 border-green-300'
+                    : 'bg-gray-100 text-gray-600 border-2 border-gray-200'
+                }`}
+                disabled={isLoadingRealData}
+              >
+                {isLoadingRealData ? '⏳ 로딩중...' : useRealData ? '✅ 실제 데이터' : '🔄 목업 데이터'}
+              </button>
+              <button
                 onClick={() => setShowLayers((prev) => ({ ...prev, airQuality: !prev.airQuality }))}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   showLayers.airQuality
@@ -188,7 +225,7 @@ export default function EnvironmentPage() {
                 center={{ lat: currentLocation.lat, lng: currentLocation.lng }}
                 level={5}
                 onLoad={handleMapLoad}
-                key={`${showLayers.airQuality}-${showLayers.cctv}`}
+                key={`${showLayers.airQuality}-${showLayers.cctv}-${useRealData}-${realAirQualityData.length}`}
               />
             </div>
 
@@ -238,26 +275,47 @@ export default function EnvironmentPage() {
         </div>
 
         {/* API 연동 안내 */}
-        <div className="mt-6 bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl">⚠️</span>
-            <div>
-              <h4 className="font-semibold text-yellow-900 mb-1">목업 데이터로 표시 중</h4>
-              <p className="text-sm text-yellow-800">
-                현재는 목업 데이터로 UI를 표시하고 있습니다. 실제 API 연동 후:
-              </p>
-              <ul className="text-sm text-yellow-800 mt-2 space-y-1 list-disc list-inside">
-                <li>에어코리아 API → 실시간 미세먼지 데이터</li>
-                <li>기상청 API → 실시간 기상특보</li>
-                <li>행정안전부 API → 긴급재난문자</li>
-                <li>CCTV 표준데이터 → 전국 CCTV 위치</li>
-              </ul>
-              <p className="text-xs text-yellow-700 mt-2">
-                📄 API 연동 가이드는 프로젝트 루트의 <code className="bg-yellow-100 px-1 rounded">API_SETUP_GUIDE.md</code>를 참고하세요
-              </p>
+        {!useRealData && (
+          <div className="mt-6 bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div>
+                <h4 className="font-semibold text-yellow-900 mb-1">목업 데이터로 표시 중</h4>
+                <p className="text-sm text-yellow-800">
+                  현재는 목업 데이터로 UI를 표시하고 있습니다. 실제 API 연동 후:
+                </p>
+                <ul className="text-sm text-yellow-800 mt-2 space-y-1 list-disc list-inside">
+                  <li>에어코리아 API → 실시간 미세먼지 데이터</li>
+                  <li>기상청 API → 실시간 기상특보</li>
+                  <li>행정안전부 API → 긴급재난문자</li>
+                  <li>CCTV 표준데이터 → 전국 CCTV 위치</li>
+                </ul>
+                <p className="text-xs text-yellow-700 mt-2">
+                  📄 API 연동 가이드는 프로젝트 루트의 <code className="bg-yellow-100 px-1 rounded">API_SETUP_GUIDE.md</code>를 참고하세요
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {useRealData && (
+          <div className="mt-6 bg-green-50 border-2 border-green-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">✅</span>
+              <div>
+                <h4 className="font-semibold text-green-900 mb-1">실시간 데이터 사용 중</h4>
+                <p className="text-sm text-green-800">
+                  에어코리아 API를 통해 실시간 대기질 데이터를 표시하고 있습니다.
+                </p>
+                <ul className="text-sm text-green-800 mt-2 space-y-1 list-disc list-inside">
+                  <li>✅ 에어코리아 API - 서울 주요 측정소 10곳</li>
+                  <li>🔄 기상청 API - 준비 중</li>
+                  <li>🔄 긴급재난문자 API - 준비 중</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   )
