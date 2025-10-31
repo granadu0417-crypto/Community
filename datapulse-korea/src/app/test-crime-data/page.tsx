@@ -1,34 +1,23 @@
 'use client'
 
 import { useState } from 'react'
+import { fetchRawCrimeData, analyzeCrimeDataStructure } from '@/lib/api/crimeDataApi'
 
 export default function TestCrimeDataPage() {
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState<any>(null)
+  const [analysis, setAnalysis] = useState<any>(null)
 
   const fetchData = async () => {
     setLoading(true)
     try {
-      const API_KEY = process.env.NEXT_PUBLIC_DATA_API_KEY
-      const url = `https://api.odcloud.kr/api/3074462/v1/uddi:161740bd-8ec5-4734-9a3d-f7a2cde34942?serviceKey=${API_KEY}&page=1&perPage=100`
-
       console.log('🔍 API 호출 중...')
-      const response = await fetch(url)
-      const result = await response.json()
+      const result = await fetchRawCrimeData(1, 100)
 
-      console.log('📊 전체 응답:', result)
-      console.log('📊 총 데이터 개수:', result.totalCount)
-
-      if (result.data && result.data.length > 0) {
-        console.log('📊 첫 번째 데이터:', result.data[0])
-        console.log('📊 데이터 컬럼:', Object.keys(result.data[0]))
-
-        // 연도 정보가 있는지 확인
-        const firstItem = result.data[0]
-        const yearFields = Object.keys(firstItem).filter(key =>
-          key.includes('년') || key.includes('year') || key.includes('Year')
-        )
-        console.log('📅 연도 관련 필드:', yearFields)
+      if (result && result.data) {
+        const dataAnalysis = analyzeCrimeDataStructure(result.data)
+        setAnalysis(dataAnalysis)
+        console.log('📊 데이터 분석 결과:', dataAnalysis)
       }
 
       setData(result)
@@ -61,10 +50,77 @@ export default function TestCrimeDataPage() {
                 <p><strong>총 데이터 개수:</strong> {data.totalCount}개</p>
                 <p><strong>현재 페이지:</strong> {data.page}</p>
                 <p><strong>페이지당 개수:</strong> {data.perPage}</p>
+                <p><strong>현재 페이지 데이터:</strong> {data.currentCount}개</p>
               </div>
             </div>
 
-            {/* 컬럼 정보 */}
+            {/* 데이터 분석 결과 */}
+            {analysis && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-xl font-bold mb-4">🔍 데이터 구조 분석</h2>
+                <div className="space-y-4">
+                  {/* 연도 필드 */}
+                  <div className="p-4 bg-blue-50 rounded border border-blue-200">
+                    <h3 className="font-semibold text-blue-900 mb-2">📅 연도 관련 필드 ({analysis.yearFields.length}개)</h3>
+                    {analysis.yearFields.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {analysis.yearFields.map((field: string) => (
+                          <span key={field} className="px-3 py-1 bg-blue-200 text-blue-900 rounded-full text-xs font-mono">
+                            {field}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-blue-700">⚠️ 연도 필드를 찾을 수 없습니다</p>
+                    )}
+                  </div>
+
+                  {/* 범죄 카테고리 필드 */}
+                  <div className="p-4 bg-red-50 rounded border border-red-200">
+                    <h3 className="font-semibold text-red-900 mb-2">🚨 범죄 카테고리 필드 ({analysis.categoryFields.length}개)</h3>
+                    {analysis.categoryFields.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {analysis.categoryFields.map((field: string) => (
+                          <span key={field} className="px-3 py-1 bg-red-200 text-red-900 rounded-full text-xs font-mono">
+                            {field}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-red-700">카테고리 필드 없음</p>
+                    )}
+                  </div>
+
+                  {/* 지역 필드 */}
+                  <div className="p-4 bg-green-50 rounded border border-green-200">
+                    <h3 className="font-semibold text-green-900 mb-2">📍 지역 필드 ({analysis.regionFields.length}개)</h3>
+                    {analysis.regionFields.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {analysis.regionFields.map((field: string) => (
+                          <span key={field} className="px-3 py-1 bg-green-200 text-green-900 rounded-full text-xs font-mono">
+                            {field}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-green-700">지역 필드 없음</p>
+                    )}
+                  </div>
+
+                  {/* 전체 컬럼 */}
+                  <div className="p-4 bg-gray-50 rounded border border-gray-200">
+                    <h3 className="font-semibold text-gray-900 mb-2">📋 전체 컬럼 ({analysis.columns.length}개)</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                      {analysis.columns.map((col: string) => (
+                        <span key={col} className="font-mono text-gray-700">{col}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 컬럼 정보 (기존) */}
             {data.data && data.data.length > 0 && (
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-bold mb-4">📋 데이터 컬럼 ({Object.keys(data.data[0]).length}개)</h2>
