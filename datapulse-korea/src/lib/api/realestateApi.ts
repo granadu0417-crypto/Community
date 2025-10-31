@@ -137,11 +137,12 @@ async function fetchRealApiData(regionName: string): Promise<RealEstateApiRespon
       }
     }
 
-    // 2. 최근 3개월 데이터 수집
+    // 2. 최근 3개월 데이터 수집 (등록 지연 3개월 고려)
     const currentDate = new Date()
     const transactions: ApartmentTransaction[] = []
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 3; i < 6; i++) {
+      // 3~5개월 전 데이터 조회 (부동산 거래 등록 지연 1-3개월 고려)
       const targetDate = new Date(currentDate)
       targetDate.setMonth(currentDate.getMonth() - i)
 
