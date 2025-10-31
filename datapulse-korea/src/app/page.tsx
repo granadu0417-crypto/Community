@@ -5,10 +5,12 @@ import { Button, Card, Container, Loading } from '@/components/ui'
 import { KakaoMap } from '@/components/map'
 import { AreaScoreCard } from '@/components/score'
 import RealEstateCard from '@/components/realestate/RealEstateCard'
+import ThemeSelector from '@/components/theme/ThemeSelector'
 import { searchAddress, type GeocoderResult } from '@/lib/utils/kakaoGeocoder'
 import { getRealEstateByRegion, getRealEstateByCoordinates } from '@/lib/api/realestateApi'
 import { RegionRealEstateStats } from '@/types/realestate'
 import { normalizeRegionName, debugAddressInfo, isSeoulAddress } from '@/lib/utils/addressParser'
+import { ThemeType, THEMES } from '@/types/theme'
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -19,8 +21,18 @@ export default function Home() {
     lng: 126.9780,
   })
   const [showAreaCard, setShowAreaCard] = useState(false)
+  const [selectedTheme, setSelectedTheme] = useState<ThemeType>('realestate')
   const [realEstateData, setRealEstateData] = useState<RegionRealEstateStats | null>(null)
   const [isLoadingRealEstate, setIsLoadingRealEstate] = useState(false)
+
+  // 인기 지역
+  const popularRegions = [
+    { name: '강남구', emoji: '🏆', badge: '인기 1위' },
+    { name: '마포구', emoji: '🔥', badge: '핫플' },
+    { name: '송파구', emoji: '💎', badge: '가성비' },
+    { name: '서초구', emoji: '⭐', badge: '프리미엄' },
+    { name: '성동구', emoji: '✨', badge: '떠오르는' },
+  ]
 
   const stats = [
     { label: '데이터 소스', value: '12+' },
@@ -151,6 +163,23 @@ export default function Home() {
     }
   }
 
+  // 인기 지역 바로 검색
+  const handleQuickSearch = async (regionName: string) => {
+    setSearchQuery(regionName)
+    const results = await searchAddress(regionName)
+    if (results.length > 0) {
+      const result = results[0]
+      setSelectedLocation({
+        name: result.placeName || result.address,
+        lat: result.lat,
+        lng: result.lng,
+      })
+      setShowAreaCard(true)
+      await fetchRealEstateData(result)
+      document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
   const handleMapLoad = (map: any, kakao: any) => {
     // 지도 중앙에 마커 추가
     const markerPosition = new kakao.maps.LatLng(selectedLocation.lat, selectedLocation.lng)
@@ -229,6 +258,30 @@ export default function Home() {
                 검색
               </Button>
             </div>
+
+            {/* 인기 지역 바로 검색 */}
+            <div className="mt-4">
+              <p className="text-sm text-gray-600 mb-3">🔥 인기 지역 바로 보기</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {popularRegions.map((region) => (
+                  <button
+                    key={region.name}
+                    onClick={() => handleQuickSearch(region.name)}
+                    className="group relative px-4 py-2 bg-white border-2 border-gray-200 rounded-full hover:border-blue-500 hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{region.emoji}</span>
+                      <span className="font-semibold text-gray-800 group-hover:text-blue-600">
+                        {region.name}
+                      </span>
+                      <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full">
+                        {region.badge}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Stats */}
@@ -255,59 +308,87 @@ export default function Home() {
           <div className="text-center mb-12">
             <h3 className="text-4xl font-bold mb-4">📍 우리 동네 탐색</h3>
             <p className="text-gray-600">
-              지도에서 원하는 지역을 찾고 상세한 정보를 확인하세요
+              지역을 검색하고 12가지 테마로 분석하세요
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* 지도 */}
-            <div className="lg:col-span-2">
-              <KakaoMap
-                width="100%"
-                height="600px"
-                center={{ lat: selectedLocation.lat, lng: selectedLocation.lng }}
-                level={3}
-                onLoad={handleMapLoad}
-                key={`${selectedLocation.lat}-${selectedLocation.lng}`}
-              />
-            </div>
+          {/* 지도 */}
+          <div className="mb-12">
+            <KakaoMap
+              width="100%"
+              height="500px"
+              center={{ lat: selectedLocation.lat, lng: selectedLocation.lng }}
+              level={3}
+              onLoad={handleMapLoad}
+              key={`${selectedLocation.lat}-${selectedLocation.lng}`}
+            />
+          </div>
 
-            {/* 지역 정보 카드 */}
+          {/* 테마 선택 & 데이터 */}
+          {showAreaCard ? (
             <div>
-              {showAreaCard ? (
-                isLoadingRealEstate ? (
-                  <Card variant="bordered" padding="lg" className="h-full flex items-center justify-center">
-                    <div className="text-center">
-                      <Loading size="lg" />
-                      <p className="mt-4 text-gray-600">부동산 데이터를 불러오는 중...</p>
-                    </div>
-                  </Card>
-                ) : realEstateData ? (
-                  <RealEstateCard data={realEstateData} />
-                ) : (
-                  <AreaScoreCard
-                    areaName={selectedLocation.name}
-                    address="서울특별시"
-                    totalScore={87}
-                    rank={12}
-                    scores={mockScores}
-                  />
-                )
-              ) : (
-                <Card variant="bordered" padding="lg" className="h-full flex items-center justify-center">
+              {/* 테마 선택기 */}
+              <ThemeSelector
+                selectedTheme={selectedTheme}
+                onThemeChange={setSelectedTheme}
+                regionName={selectedLocation.name}
+              />
+
+              {/* 선택한 테마 데이터 */}
+              {isLoadingRealEstate && selectedTheme === 'realestate' ? (
+                <Card variant="bordered" padding="lg" className="flex items-center justify-center min-h-[400px]">
+                  <div className="text-center">
+                    <Loading size="lg" />
+                    <p className="mt-4 text-gray-600">부동산 데이터를 불러오는 중...</p>
+                  </div>
+                </Card>
+              ) : selectedTheme === 'realestate' && realEstateData ? (
+                <RealEstateCard data={realEstateData} />
+              ) : selectedTheme === 'realestate' ? (
+                <Card variant="bordered" padding="lg" className="min-h-[400px] flex items-center justify-center">
                   <div className="text-center text-gray-500">
-                    <div className="text-6xl mb-4">🔍</div>
-                    <p className="font-medium mb-2">지역을 검색해보세요</p>
-                    <p className="text-sm">
-                      검색창에 주소나 장소명을 입력하면
-                      <br />
-                      해당 지역의 상세 정보를 확인할 수 있습니다
+                    <div className="text-6xl mb-4">📊</div>
+                    <p className="font-medium mb-2">부동산 데이터 없음</p>
+                    <p className="text-sm">서울시 구 단위 검색을 해주세요</p>
+                  </div>
+                </Card>
+              ) : (
+                <Card variant="bordered" padding="lg" className="min-h-[400px] flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-6xl mb-4">🚀</div>
+                    <p className="font-semibold text-xl mb-2 text-gray-900">곧 공개됩니다!</p>
+                    <p className="text-gray-600 mb-4">
+                      {THEMES.find(t => t.id === selectedTheme)?.description}
                     </p>
+                    <div className="inline-block px-4 py-2 bg-blue-100 text-blue-600 rounded-full text-sm font-semibold">
+                      Coming Soon 🎉
+                    </div>
                   </div>
                 </Card>
               )}
             </div>
-          </div>
+          ) : (
+            <Card variant="bordered" padding="lg" className="min-h-[400px] flex items-center justify-center">
+              <div className="text-center text-gray-500">
+                <div className="text-6xl mb-4">🔍</div>
+                <p className="font-medium mb-2 text-lg">지역을 검색해보세요</p>
+                <p className="text-sm mb-4">
+                  위의 검색창이나 인기 지역 버튼을 이용해주세요
+                </p>
+                <div className="flex flex-wrap justify-center gap-2 mt-4">
+                  {popularRegions.slice(0, 3).map((region) => (
+                    <button
+                      key={region.name}
+                      onClick={() => handleQuickSearch(region.name)}
+                      className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition"
+                    >
+                      {region.emoji} {region.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          )}
         </Container>
       </section>
 
