@@ -12,6 +12,7 @@ const nextConfig = {
     NEXT_PUBLIC_KAKAO_MAP_KEY: process.env.NEXT_PUBLIC_KAKAO_MAP_KEY,
     NEXT_PUBLIC_REALESTATE_API_MODE: process.env.NEXT_PUBLIC_REALESTATE_API_MODE,
     NEXT_PUBLIC_REALESTATE_API_KEY: process.env.NEXT_PUBLIC_REALESTATE_API_KEY,
+    NEXT_PUBLIC_DATA_API_KEY: process.env.DATA_API_KEY, // 테스트용 - 공공데이터 API 키
   },
   // 정적 최적화
   reactStrictMode: true,
