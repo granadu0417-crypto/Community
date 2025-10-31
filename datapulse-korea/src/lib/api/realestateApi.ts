@@ -84,26 +84,8 @@ export async function getRealEstateByRegion(
   regionName: string
 ): Promise<RealEstateApiResponse> {
   try {
-    if (API_MODE === 'mock') {
-      // 목업 데이터 사용
-      await delay(300) // 네트워크 지연 시뮬레이션
-      const data = getMockDataByRegionName(regionName)
-
-      if (data) {
-        return {
-          success: true,
-          data,
-        }
-      } else {
-        return {
-          success: false,
-          error: '해당 지역의 데이터를 찾을 수 없습니다.',
-        }
-      }
-    } else {
-      // 실제 API 호출 (구현 예정)
-      return await fetchRealApiData(regionName)
-    }
+    // 실제 API 호출
+    return await fetchRealApiData(regionName)
   } catch (error) {
     console.error('부동산 데이터 조회 실패:', error)
     return {
@@ -121,26 +103,8 @@ export async function getRealEstateByCoordinates(
   lng: number
 ): Promise<RealEstateApiResponse> {
   try {
-    if (API_MODE === 'mock') {
-      // 목업 데이터 사용
-      await delay(300)
-      const data = getMockDataByCoordinates(lat, lng)
-
-      if (data) {
-        return {
-          success: true,
-          data,
-        }
-      } else {
-        return {
-          success: false,
-          error: '해당 좌표의 데이터를 찾을 수 없습니다.',
-        }
-      }
-    } else {
-      // 실제 API 호출 (구현 예정)
-      return await fetchRealApiDataByCoords(lat, lng)
-    }
+    // 실제 API 호출
+    return await fetchRealApiDataByCoords(lat, lng)
   } catch (error) {
     console.error('부동산 데이터 조회 실패:', error)
     return {
@@ -154,13 +118,9 @@ export async function getRealEstateByCoordinates(
  * 모든 지역 데이터 조회
  */
 export async function getAllRegionsRealEstate(): Promise<RegionRealEstateStats[]> {
-  if (API_MODE === 'mock') {
-    await delay(500)
-    return Object.values(mockRealEstateData)
-  } else {
-    // 실제 API 호출 (구현 예정)
-    return []
-  }
+  // 실제 API는 지역별로 개별 호출해야 하므로
+  // 이 함수는 사용하지 않음
+  return []
 }
 
 /**
