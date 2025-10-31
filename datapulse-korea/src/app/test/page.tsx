@@ -40,7 +40,7 @@ export default function TestPage() {
       console.log('결과 코드:', resultCode)
       console.log('결과 메시지:', resultMsg)
 
-      if (resultCode !== '00') {
+      if (resultCode !== '00' && resultCode !== '000') {
         throw new Error(`API 오류: ${resultCode} - ${resultMsg}`)
       }
 
