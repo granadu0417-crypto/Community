@@ -100,43 +100,59 @@ export async function fetchStationList(addr: string): Promise<any[]> {
 }
 
 /**
- * 기상청 - 기상특보 조회
+ * 기상청 - 기상특보 조회 (실시간)
+ *
+ * 호우, 대설, 강풍, 풍랑, 태풍, 건조, 한파, 폭염 등 12개 기상현상에 대한
+ * 실시간 특보 발표 정보 (주의보/경보)
+ *
+ * API: 기상청_기상특보 조회서비스
+ * 최종 수정일: 2024-07-19
+ * 신청: https://www.data.go.kr/data/15000415/openapi.do
  */
-export async function fetchWeatherWarnings(): Promise<WeatherWarning[]> {
+export async function fetchWeatherWarnings(
+  areaCode?: string // 지역코드 (예: 11 = 서울)
+): Promise<WeatherWarning[]> {
   try {
     if (!KMA_KEY) {
       console.warn('기상청 API 키가 설정되지 않았습니다')
       return []
     }
 
-    // 기상청 API 엔드포인트 (실제 URL은 발급 후 확인 필요)
+    // 기상특보목록조회 API
     const url = 'http://apis.data.go.kr/1360000/WthrWrnInfoService/getWthrWrnList'
     const params = new URLSearchParams({
       serviceKey: KMA_KEY,
       numOfRows: '10',
       pageNo: '1',
       dataType: 'JSON',
-      stnId: '108', // 서울
     })
 
+    // 지역코드가 있으면 추가
+    if (areaCode) {
+      params.append('areaCode', areaCode)
+    }
+
     const response = await fetch(`${url}?${params}`, {
-      next: { revalidate: 600 }, // 10분 캐시
+      next: { revalidate: 600 }, // 10분 캐시 (특보는 실시간 발표)
     })
 
     if (!response.ok) throw new Error(`API 호출 실패: ${response.status}`)
 
     const data = await response.json()
 
-    // 응답 구조는 실제 API 응답에 따라 수정 필요
+    // 응답 구조: response.body.items.item[]
     const items = data.response?.body?.items?.item || []
 
-    return items.map((item: any, index: number) => ({
-      id: `w${index}`,
-      location: item.areaName || '서울',
-      warningType: item.title || '특보',
-      level: item.level === '경보' ? '경보' : '주의보',
-      issueTime: item.tmFc || new Date().toISOString(),
-      content: item.other || '',
+    // 배열이 아닌 경우 (단일 항목)
+    const itemArray = Array.isArray(items) ? items : [items]
+
+    return itemArray.map((item: any, index: number) => ({
+      id: `w${item.stnId || index}`,
+      location: item.title || '전국', // 특보 제목 (예: "서울·인천·경기도")
+      warningType: item.warnVar || '특보', // 특보종류 (예: "호우경보", "대설주의보")
+      level: item.warnStress === '경보' ? '경보' : '주의보',
+      issueTime: item.tmFc || new Date().toISOString(), // 발표시각
+      content: item.warnMsg || '', // 특보 내용
     }))
   } catch (error) {
     console.error('기상특보 조회 실패:', error)
