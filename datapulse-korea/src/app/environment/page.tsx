@@ -75,22 +75,22 @@ export default function EnvironmentPage() {
           const airQualityInfo = getAirQualityInfo(station.khaiGrade)
 
           // 커스텀 마커 이미지 (색깔로 등급 표시)
+          const svgString = `
+            <svg width="40" height="40" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="20" r="18" fill="${
+                station.khaiGrade === 1
+                  ? '#3B82F6'
+                  : station.khaiGrade === 2
+                    ? '#10B981'
+                    : station.khaiGrade === 3
+                      ? '#F59E0B'
+                      : '#EF4444'
+              }" opacity="0.8" stroke="white" stroke-width="2"/>
+              <circle cx="20" cy="20" r="6" fill="white"/>
+            </svg>
+          `
           const markerImage = new kakao.maps.MarkerImage(
-            'data:image/svg+xml;base64,' +
-              btoa(`
-              <svg width="40" height="40" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="20" cy="20" r="18" fill="${
-                  station.khaiGrade === 1
-                    ? '#3B82F6'
-                    : station.khaiGrade === 2
-                      ? '#10B981'
-                      : station.khaiGrade === 3
-                        ? '#F59E0B'
-                        : '#EF4444'
-                }" opacity="0.8"/>
-                <text x="20" y="26" text-anchor="middle" fill="white" font-size="16" font-weight="bold">🌫️</text>
-              </svg>
-            `),
+            'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString),
             new kakao.maps.Size(40, 40)
           )
 
@@ -128,14 +128,15 @@ export default function EnvironmentPage() {
     // CCTV 마커
     if (showLayers.cctv) {
       mockCCTVData.forEach((cctv) => {
+        const cctvSvgString = `
+          <svg width="32" height="32" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="14" fill="#6366F1" opacity="0.9" stroke="white" stroke-width="2"/>
+            <rect x="10" y="12" width="12" height="8" fill="white" rx="2"/>
+            <polygon points="22,14 26,12 26,20 22,18" fill="white"/>
+          </svg>
+        `
         const markerImage = new kakao.maps.MarkerImage(
-          'data:image/svg+xml;base64,' +
-            btoa(`
-            <svg width="32" height="32" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="16" cy="16" r="14" fill="#6366F1" opacity="0.9"/>
-              <text x="16" y="22" text-anchor="middle" fill="white" font-size="14">📹</text>
-            </svg>
-          `),
+          'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(cctvSvgString),
           new kakao.maps.Size(32, 32)
         )
 
