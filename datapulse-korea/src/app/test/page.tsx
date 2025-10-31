@@ -13,10 +13,19 @@ export default function TestPage() {
     setData(null)
 
     try {
-      // 강남구, 2024년 10월
+      // 강남구, 최근 3개월 전 (실거래가 등록 지연 고려)
       const API_KEY = 'bRfZ97B4aD4dhEcDAZTTYL4i0QvA5lrXzStBTwhEZgv2zJLjnLO5BGjR5UIjsSLodBMC2IzGZd6SBz1qwS6KKQ=='
-      const url = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev?serviceKey=${API_KEY}&LAWD_CD=11680&DEAL_YMD=202410&numOfRows=10`
 
+      // 현재 날짜에서 3개월 전 계산 (부동산 데이터 등록 지연 고려)
+      const targetDate = new Date()
+      targetDate.setMonth(targetDate.getMonth() - 3)
+      const year = targetDate.getFullYear()
+      const month = String(targetDate.getMonth() + 1).padStart(2, '0')
+      const dealYmd = `${year}${month}`
+
+      const url = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev?serviceKey=${API_KEY}&LAWD_CD=11680&DEAL_YMD=${dealYmd}&numOfRows=10`
+
+      console.log('조회 기간:', `${year}년 ${month}월`)
       console.log('API 호출 URL:', url)
 
       const response = await fetch(url)
@@ -85,10 +94,11 @@ export default function TestPage() {
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">API 정보</h2>
           <div className="space-y-2 text-sm">
-            <p><strong>엔드포인트:</strong> RTMSDataSvcAptTradeDev</p>
+            <p><strong>엔드포인트:</strong> RTMSDataSvcAptTradeDev (상세자료)</p>
             <p><strong>지역:</strong> 강남구 (11680)</p>
-            <p><strong>기간:</strong> 2024년 10월</p>
+            <p><strong>기간:</strong> 최근 3개월 전 데이터 (등록 지연 고려)</p>
             <p><strong>결과 수:</strong> 10건</p>
+            <p className="text-gray-500 italic">💡 부동산 거래는 신고 후 1-3개월 지연되어 등록됩니다</p>
           </div>
         </div>
 
