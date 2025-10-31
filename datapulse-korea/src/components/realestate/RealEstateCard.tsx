@@ -43,6 +43,19 @@ export default function RealEstateCard({ data }: RealEstateCardProps) {
         <p className="text-sm text-gray-500">{data.regionName}</p>
       </div>
 
+      {/* 데이터 기간 안내 */}
+      <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-start gap-2">
+          <span className="text-blue-600 text-sm">ℹ️</span>
+          <div className="text-xs text-blue-800">
+            <div className="font-semibold mb-1">최신 3개월 거래 데이터 기준</div>
+            <div className="text-blue-600">
+              최근 거래 {data.transactionCount}건 분석 • 부동산 거래는 신고 후 1-3개월 지연되어 등록됩니다
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 종합 점수 */}
       <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl text-center">
         <div className="flex items-center justify-center gap-2 mb-2">

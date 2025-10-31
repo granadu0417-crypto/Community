@@ -137,12 +137,11 @@ async function fetchRealApiData(regionName: string): Promise<RealEstateApiRespon
       }
     }
 
-    // 2. 최근 3개월 데이터 수집 (등록 지연 3개월 고려)
+    // 2. 최신 3개월 데이터 수집 (현재월, 1개월 전, 2개월 전)
     const currentDate = new Date()
     const transactions: ApartmentTransaction[] = []
 
-    for (let i = 3; i < 6; i++) {
-      // 3~5개월 전 데이터 조회 (부동산 거래 등록 지연 1-3개월 고려)
+    for (let i = 0; i < 3; i++) {
       const targetDate = new Date(currentDate)
       targetDate.setMonth(currentDate.getMonth() - i)
 
@@ -155,10 +154,11 @@ async function fetchRealApiData(regionName: string): Promise<RealEstateApiRespon
       transactions.push(...monthTransactions)
     }
 
+    // 데이터가 적어도 있는 만큼 표시 (완전히 없을 때만 에러)
     if (transactions.length === 0) {
       return {
         success: false,
-        error: '거래 데이터가 없습니다.',
+        error: '해당 지역의 최근 거래 데이터가 아직 등록되지 않았습니다. 부동산 거래는 신고 후 1-3개월 지연되어 등록됩니다.',
       }
     }
 
