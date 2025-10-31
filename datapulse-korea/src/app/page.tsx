@@ -8,6 +8,7 @@ import RealEstateCard from '@/components/realestate/RealEstateCard'
 import { searchAddress, type GeocoderResult } from '@/lib/utils/kakaoGeocoder'
 import { getRealEstateByRegion, getRealEstateByCoordinates } from '@/lib/api/realestateApi'
 import { RegionRealEstateStats } from '@/types/realestate'
+import { normalizeRegionName, debugAddressInfo, isSeoulAddress } from '@/lib/utils/addressParser'
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -86,8 +87,8 @@ export default function Home() {
         })
         setShowAreaCard(true)
 
-        // 부동산 데이터 가져오기
-        await fetchRealEstateData(result.placeName || result.address, result.lat, result.lng)
+        // 부동산 데이터 가져오기 (result 전체 전달)
+        await fetchRealEstateData(result)
 
         // 지도 섹션으로 스크롤
         document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' })
@@ -103,25 +104,41 @@ export default function Home() {
   }
 
   // 부동산 데이터 가져오기
-  const fetchRealEstateData = async (regionName: string, lat: number, lng: number) => {
+  const fetchRealEstateData = async (result: GeocoderResult) => {
     setIsLoadingRealEstate(true)
     try {
-      // 먼저 지역명으로 시도
-      const response = await getRealEstateByRegion(regionName)
+      // 주소 파싱 디버깅
+      debugAddressInfo(result.placeName, result.address)
+
+      // 서울 주소인지 확인
+      if (!isSeoulAddress(result.address)) {
+        console.log('서울 지역이 아닙니다:', result.address)
+        setRealEstateData(null)
+        return
+      }
+
+      // 카카오 응답에서 구 이름 추출
+      const normalizedRegion = normalizeRegionName(result.placeName, result.address)
+
+      if (!normalizedRegion) {
+        console.log('서울시 구를 찾을 수 없습니다:', result.address)
+        setRealEstateData(null)
+        return
+      }
+
+      console.log('✅ 정규화된 지역명:', normalizedRegion)
+
+      // 정규화된 지역명으로 API 호출
+      const response = await getRealEstateByRegion(normalizedRegion)
       if (response.success && response.data) {
         setRealEstateData(response.data)
+        console.log('✅ 부동산 데이터 로드 성공:', response.data)
       } else {
-        // 지역명으로 실패하면 좌표로 시도
-        const coordResponse = await getRealEstateByCoordinates(lat, lng)
-        if (coordResponse.success && coordResponse.data) {
-          setRealEstateData(coordResponse.data)
-        } else {
-          console.log('부동산 데이터를 찾을 수 없습니다:', regionName)
-          setRealEstateData(null)
-        }
+        console.log('❌ 부동산 데이터 조회 실패:', response.error)
+        setRealEstateData(null)
       }
     } catch (error) {
-      console.error('부동산 데이터 조회 실패:', error)
+      console.error('❌ 부동산 데이터 조회 오류:', error)
       setRealEstateData(null)
     } finally {
       setIsLoadingRealEstate(false)
