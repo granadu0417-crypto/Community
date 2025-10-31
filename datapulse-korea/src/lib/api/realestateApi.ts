@@ -201,6 +201,7 @@ async function fetchTransactionsByMonth(
     url.searchParams.set('serviceKey', REALESTATE_API_KEY)
     url.searchParams.set('LAWD_CD', regionCode)
     url.searchParams.set('DEAL_YMD', dealYmd)
+    url.searchParams.set('pageNo', '1') // 페이지번호 (필수)
     url.searchParams.set('numOfRows', '1000') // 최대 1000건
 
     const response = await fetch(url.toString())
