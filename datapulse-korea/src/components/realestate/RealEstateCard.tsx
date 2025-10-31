@@ -48,9 +48,9 @@ export default function RealEstateCard({ data }: RealEstateCardProps) {
         <div className="flex items-start gap-2">
           <span className="text-blue-600 text-sm">ℹ️</span>
           <div className="text-xs text-blue-800">
-            <div className="font-semibold mb-1">최신 3개월 거래 데이터 기준</div>
+            <div className="font-semibold mb-1">3-5개월 전 거래 데이터 기준</div>
             <div className="text-blue-600">
-              최근 거래 {data.transactionCount}건 분석 • 부동산 거래는 신고 후 1-3개월 지연되어 등록됩니다
+              총 {data.transactionCount}건 분석 • 정확한 정보를 위해 등록이 완료된 데이터만 표시합니다 (부동산 거래는 신고 후 1-3개월 지연 등록)
             </div>
           </div>
         </div>
@@ -188,11 +188,16 @@ export default function RealEstateCard({ data }: RealEstateCardProps) {
             {data.recentTransactions.slice(0, 2).map((tx, idx) => (
               <div key={idx} className="p-3 bg-gray-50 rounded-lg text-sm">
                 <div className="font-medium text-gray-900 mb-1">{tx.aptNm}</div>
-                <div className="flex justify-between text-xs text-gray-600">
-                  <span>
-                    {tx.excluUseAr}㎡ ({convertToPyeong(parseFloat(tx.excluUseAr))}평) · {tx.floor}층
-                  </span>
-                  <span className="font-bold text-blue-600">{tx.dealAmount}만원</span>
+                <div className="flex justify-between items-start text-xs text-gray-600">
+                  <div>
+                    <div className="mb-0.5">
+                      <span className="font-medium">전용</span> {tx.excluUseAr}㎡ ({convertToPyeong(parseFloat(tx.excluUseAr))}평)
+                    </div>
+                    <div className="text-gray-500">
+                      <span className="font-medium">공급</span> {Math.round(parseFloat(tx.excluUseAr) * 1.3)}㎡ ({convertToPyeong(parseFloat(tx.excluUseAr) * 1.3)}평) · {tx.floor}층
+                    </div>
+                  </div>
+                  <span className="font-bold text-blue-600 whitespace-nowrap">{tx.dealAmount}만원</span>
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
                   {tx.dealYear}.{tx.dealMonth}.{tx.dealDay} · {tx.umdNm}

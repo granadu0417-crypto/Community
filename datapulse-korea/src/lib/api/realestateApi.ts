@@ -137,17 +137,21 @@ async function fetchRealApiData(regionName: string): Promise<RealEstateApiRespon
       }
     }
 
-    // 2. 최신 3개월 데이터 수집 (현재월, 1개월 전, 2개월 전)
+    // 2. 3-5개월 전 데이터 수집 (등록 지연 고려)
+    // 부동산 거래는 신고 후 1-3개월 지연되어 등록되므로
+    // 확실하게 등록된 3-5개월 전 데이터를 조회합니다
     const currentDate = new Date()
     const transactions: ApartmentTransaction[] = []
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 3; i <= 5; i++) {
       const targetDate = new Date(currentDate)
       targetDate.setMonth(currentDate.getMonth() - i)
 
       const year = targetDate.getFullYear()
       const month = String(targetDate.getMonth() + 1).padStart(2, '0')
       const dealYmd = `${year}${month}`
+
+      console.log(`📅 조회 기간: ${year}년 ${month}월 (${i}개월 전)`)
 
       // API 호출
       const monthTransactions = await fetchTransactionsByMonth(regionCode, dealYmd)
