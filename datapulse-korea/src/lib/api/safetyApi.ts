@@ -161,23 +161,27 @@ function calculateSafetyStats(
     violence: 0,
   }
 
-  // 강력범죄만 필터링
-  const violentCrimes = crimeData.filter((item) => item.범죄대분류 === '강력범죄')
-
-  for (const crime of violentCrimes) {
+  // 모든 범죄 데이터 처리 (강력범죄에 국한하지 않음)
+  for (const crime of crimeData) {
     const count = (crime[apiRegionName] as number) || 0
-    const category = crime.범죄중분류
+    const mainCategory = crime.범죄대분류
+    const subCategory = crime.범죄중분류
 
-    // 범죄 유형별 분류
-    if (category === '살인기수' || category === '살인미수등') {
+    // 범죄 대분류와 중분류를 모두 고려하여 분류
+    if (subCategory === '살인기수' || subCategory === '살인미수등') {
       crimes.murder += count
-    } else if (category === '강도') {
+    } else if (subCategory === '강도' || mainCategory === '강도') {
       crimes.robbery += count
-    } else if (category === '강간' || category === '유사강간') {
+    } else if (
+      subCategory === '강간' ||
+      subCategory === '유사강간' ||
+      mainCategory === '성폭력범죄' ||
+      subCategory.includes('성폭력')
+    ) {
       crimes.sexualAssault += count
-    } else if (category.includes('절도')) {
+    } else if (subCategory.includes('절도') || mainCategory === '절도범죄') {
       crimes.theft += count
-    } else if (category.includes('폭력')) {
+    } else if (subCategory.includes('폭력') || mainCategory === '폭력범죄') {
       crimes.violence += count
     }
   }
@@ -279,4 +283,70 @@ export function getSafetyColor(score: number): string {
   if (score >= 40) return 'text-yellow-600'
   if (score >= 20) return 'text-orange-600'
   return 'text-red-600'
+}
+
+/**
+ * 모든 서울시 구의 안전 데이터 가져오기 (지역 비교용)
+ */
+export async function getAllSeoulSafetyStats(): Promise<SafetyStats[]> {
+  const crimeData = await fetchCrimeData()
+  if (!crimeData) return []
+
+  const regions = Object.keys(REGION_NAME_MAP)
+  const stats: SafetyStats[] = []
+
+  for (const regionName of regions) {
+    const apiRegionName = REGION_NAME_MAP[regionName]
+    const regionStats = calculateSafetyStats(regionName, apiRegionName, crimeData)
+    stats.push(regionStats)
+  }
+
+  return stats
+}
+
+/**
+ * 지역별 순위 정보
+ */
+export interface RegionRanking {
+  regionName: string
+  rank: number
+  safetyScore: number
+  totalCrimes: number
+}
+
+/**
+ * 안전도 순위 가져오기
+ */
+export async function getSafetyRankings(): Promise<RegionRanking[]> {
+  const allStats = await getAllSeoulSafetyStats()
+
+  return allStats
+    .map((stat, idx) => ({
+      regionName: stat.regionCode,
+      rank: 0, // 임시, 아래에서 설정
+      safetyScore: stat.safetyScore,
+      totalCrimes: stat.totalCrimes,
+    }))
+    .sort((a, b) => b.safetyScore - a.safetyScore) // 안전도 높은 순
+    .map((item, idx) => ({ ...item, rank: idx + 1 }))
+}
+
+/**
+ * 특정 지역의 순위 정보 가져오기
+ */
+export async function getRegionRanking(regionName: string): Promise<{
+  myRank: number
+  totalRegions: number
+  rankings: RegionRanking[]
+} | null> {
+  const rankings = await getSafetyRankings()
+  const myRanking = rankings.find(r => r.regionName === regionName)
+
+  if (!myRanking) return null
+
+  return {
+    myRank: myRanking.rank,
+    totalRegions: rankings.length,
+    rankings: rankings.slice(0, 10), // 상위 10개만
+  }
 }
