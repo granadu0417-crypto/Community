@@ -1,6 +1,8 @@
 // 범죄 데이터 API 구조 확인용 유틸리티
 
-const API_KEY = process.env.NEXT_PUBLIC_DATA_API_KEY || ''
+// safetyApi.ts와 동일한 API 사용 (경찰청 범죄 통계)
+const API_KEY = process.env.NEXT_PUBLIC_DATA_API_KEY ||
+  'bRfZ97B4aD4dhEcDAZTTYL4i0QvA5lrXzStBTwhEZgv2zJLjnLO5BGjR5UIjsSLodBMC2IzGZd6SBz1qwS6KKQ=='
 const CRIME_DATA_API_URL = 'https://api.odcloud.kr/api/3074462/v1/uddi:161740bd-8ec5-4734-9a3d-f7a2cde34942'
 
 export interface CrimeDataResponse {
