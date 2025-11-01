@@ -4,6 +4,7 @@
  */
 
 import type { AirQualityData, WeatherWarning, DisasterMessage, CCTVData } from '@/types/environment'
+import { getStationLocation, SEOUL_STATIONS } from '@/lib/data/seoulStations'
 
 // API 키 가져오기
 const AIR_KOREA_KEY = process.env.NEXT_PUBLIC_AIR_KOREA_API_KEY
@@ -235,32 +236,79 @@ export async function fetchMultipleStationsAirQuality(
 }
 
 /**
- * 서울 주요 측정소 목록
+ * 서울 전체 측정소 실시간 대기질 조회 (시도별 API 사용)
+ * 25개 측정소 데이터를 한 번에 가져와서 위치 정보와 매칭
  */
-export const SEOUL_STATIONS = [
-  '강남구',
-  '강동구',
-  '강북구',
-  '강서구',
-  '관악구',
-  '광진구',
-  '구로구',
-  '금천구',
-  '노원구',
-  '도봉구',
-  '동대문구',
-  '동작구',
-  '마포구',
-  '서대문구',
-  '서초구',
-  '성동구',
-  '성북구',
-  '송파구',
-  '양천구',
-  '영등포구',
-  '용산구',
-  '은평구',
-  '종로구',
-  '중구',
-  '중랑구',
-]
+export async function fetchSeoulAllStations(): Promise<AirQualityData[]> {
+  try {
+    if (!AIR_KOREA_KEY) {
+      console.error('에어코리아 API 키가 설정되지 않았습니다')
+      return []
+    }
+
+    const url = 'http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getCtprvnRltmMesureDnsty'
+    const params = new URLSearchParams({
+      serviceKey: AIR_KOREA_KEY,
+      returnType: 'json',
+      numOfRows: '100', // 서울 25개 측정소 모두 가져오기
+      pageNo: '1',
+      sidoName: '서울',
+      ver: '1.0',
+    })
+
+    const response = await fetch(`${url}?${params}`, {
+      next: { revalidate: 3600 }, // 1시간 캐시
+    })
+
+    if (!response.ok) {
+      throw new Error(`API 호출 실패: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (data.response?.body?.items && Array.isArray(data.response.body.items)) {
+      const items = data.response.body.items
+
+      // API 데이터와 위치 정보 매칭
+      return items
+        .map((item: any) => {
+          const location = getStationLocation(item.stationName)
+
+          if (!location) {
+            console.warn(`위치 정보 없음: ${item.stationName}`)
+            return null
+          }
+
+          return {
+            stationName: item.stationName,
+            addr: location.addr,
+            lat: location.lat,
+            lng: location.lng,
+            pm10Value: Number(item.pm10Value) || 0,
+            pm10Grade: Number(item.pm10Grade) as 1 | 2 | 3 | 4,
+            pm25Value: Number(item.pm25Value) || 0,
+            pm25Grade: Number(item.pm25Grade) as 1 | 2 | 3 | 4,
+            o3Value: Number(item.o3Value) || 0,
+            o3Grade: Number(item.o3Grade) as 1 | 2 | 3 | 4,
+            no2Value: Number(item.no2Value) || 0,
+            coValue: Number(item.coValue) || 0,
+            so2Value: Number(item.so2Value) || 0,
+            khaiValue: Number(item.khaiValue) || 0,
+            khaiGrade: Number(item.khaiGrade) as 1 | 2 | 3 | 4,
+            dataTime: item.dataTime,
+          }
+        })
+        .filter((data): data is AirQualityData => data !== null)
+    }
+
+    return []
+  } catch (error) {
+    console.error('서울 전체 대기질 조회 실패:', error)
+    return []
+  }
+}
+
+/**
+ * 서울 측정소명 목록 (하드코딩된 위치 데이터와 동일)
+ */
+export const SEOUL_STATION_NAMES = SEOUL_STATIONS.map((s) => s.stationName)

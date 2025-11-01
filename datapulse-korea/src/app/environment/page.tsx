@@ -9,10 +9,7 @@ import {
   mockCCTVData,
   getAirQualityInfo,
 } from '@/lib/data/mockEnvironmentData'
-import {
-  fetchMultipleStationsAirQuality,
-  SEOUL_STATIONS,
-} from '@/lib/api/environmentApi'
+import { fetchSeoulAllStations } from '@/lib/api/environmentApi'
 import type { LocationSafety, AirQualityData } from '@/types/environment'
 
 export default function EnvironmentPage() {
@@ -30,14 +27,14 @@ export default function EnvironmentPage() {
   const [isLoadingRealData, setIsLoadingRealData] = useState(false)
   const [useRealData, setUseRealData] = useState(false) // 실제 API 사용 여부
 
-  // 실제 대기질 데이터 로드
+  // 실제 대기질 데이터 로드 (서울 전체 25개 측정소)
   useEffect(() => {
     if (useRealData) {
       setIsLoadingRealData(true)
-      // 서울 주요 측정소 데이터 가져오기 (일부만)
-      const stationsToFetch = SEOUL_STATIONS.slice(0, 10) // 처음 10개만
-      fetchMultipleStationsAirQuality(stationsToFetch)
+      // 서울 전체 측정소 데이터 가져오기 (25개, 위치 정보 포함)
+      fetchSeoulAllStations()
         .then((data) => {
+          console.log(`✅ 서울 ${data.length}개 측정소 데이터 로드 완료`)
           setRealAirQualityData(data)
           setIsLoadingRealData(false)
         })
