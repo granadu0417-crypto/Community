@@ -10,6 +10,7 @@ import {
   getAirQualityInfo,
 } from '@/lib/data/mockEnvironmentData'
 import { fetchSeoulAllStations } from '@/lib/api/environmentApi'
+import { findAllDistrictsByKeyword } from '@/lib/data/seoulLocationMapping'
 import type { LocationSafety, AirQualityData } from '@/types/environment'
 
 export default function EnvironmentPage() {
@@ -55,10 +56,37 @@ export default function EnvironmentPage() {
     setLocationSafety(safety)
   }, [currentLocation])
 
-  // 검색 결과 필터링
-  const filteredStations = realAirQualityData.filter((station) =>
-    station.stationName.includes(searchQuery)
-  )
+  // 스마트 검색 결과 필터링
+  const filteredStations = (() => {
+    if (!searchQuery.trim()) return []
+
+    const query = searchQuery.trim()
+    const results = new Set<AirQualityData>()
+
+    realAirQualityData.forEach((station) => {
+      // 1. 구 이름 직접 검색
+      if (station.stationName.includes(query)) {
+        results.add(station)
+      }
+
+      // 2. 주소 검색
+      if (station.addr && station.addr.includes(query)) {
+        results.add(station)
+      }
+    })
+
+    // 3. 매핑된 키워드 검색 (동, 역, 랜드마크)
+    const mappedDistricts = findAllDistrictsByKeyword(query)
+    if (mappedDistricts.length > 0) {
+      realAirQualityData.forEach((station) => {
+        if (mappedDistricts.includes(station.stationName)) {
+          results.add(station)
+        }
+      })
+    }
+
+    return Array.from(results)
+  })()
 
   // 측정소 선택 핸들러
   const handleSelectStation = (station: AirQualityData) => {
@@ -239,7 +267,7 @@ export default function EnvironmentPage() {
                 <div className="relative flex-1">
                   <input
                     type="text"
-                    placeholder="측정소 검색 (예: 강남구, 종로구...)"
+                    placeholder="위치 검색 (예: 강남구, 역삼동, 강남역, 코엑스...)"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value)
@@ -253,29 +281,42 @@ export default function EnvironmentPage() {
               </div>
 
               {/* 검색 결과 (자동완성) */}
-              {showSearchResults && filteredStations.length > 0 && (
+              {showSearchResults && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto z-20">
-                  {filteredStations.map((station) => {
-                    const airInfo = getAirQualityInfo(station.khaiGrade)
-                    return (
-                      <button
-                        key={station.stationName}
-                        onClick={() => handleSelectStation(station)}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between border-b border-gray-100 last:border-b-0 transition-colors"
-                      >
-                        <div>
-                          <div className="font-semibold text-gray-900">{station.stationName}</div>
-                          <div className="text-xs text-gray-600 mt-1">
-                            PM10: {station.pm10Value}㎍/㎥ | PM2.5: {station.pm25Value}㎍/㎥
+                  {filteredStations.length > 0 ? (
+                    filteredStations.map((station) => {
+                      const airInfo = getAirQualityInfo(station.khaiGrade)
+                      return (
+                        <button
+                          key={station.stationName}
+                          onClick={() => handleSelectStation(station)}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between border-b border-gray-100 last:border-b-0 transition-colors"
+                        >
+                          <div>
+                            <div className="font-semibold text-gray-900">{station.stationName}</div>
+                            <div className="text-xs text-gray-600 mt-1">
+                              PM10: {station.pm10Value}㎍/㎥ | PM2.5: {station.pm25Value}㎍/㎥
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl">{airInfo.emoji}</span>
-                          <span className={`text-sm font-semibold ${airInfo.color}`}>{airInfo.label}</span>
-                        </div>
-                      </button>
-                    )
-                  })}
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">{airInfo.emoji}</span>
+                            <span className={`text-sm font-semibold ${airInfo.color}`}>{airInfo.label}</span>
+                          </div>
+                        </button>
+                      )
+                    })
+                  ) : (
+                    <div className="px-4 py-6 text-center text-gray-500">
+                      <div className="text-2xl mb-2">🔍</div>
+                      <div className="font-medium text-gray-700">검색 결과가 없습니다</div>
+                      <div className="text-sm mt-1">
+                        구 이름, 동 이름, 지하철역, 랜드마크 등으로 검색해보세요
+                      </div>
+                      <div className="text-xs mt-2 text-gray-400">
+                        예: 강남구, 역삼동, 강남역, 코엑스, 여의도, 홍대 등
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
