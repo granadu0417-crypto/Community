@@ -298,7 +298,7 @@ export async function fetchSeoulAllStations(): Promise<AirQualityData[]> {
             dataTime: item.dataTime,
           }
         })
-        .filter((data): data is AirQualityData => data !== null)
+        .filter((data: AirQualityData | null): data is AirQualityData => data !== null)
     }
 
     return []
