@@ -27,6 +27,9 @@ export default function EnvironmentPage() {
   const [realAirQualityData, setRealAirQualityData] = useState<AirQualityData[]>([])
   const [isLoadingRealData, setIsLoadingRealData] = useState(false)
   const [useRealData, setUseRealData] = useState(false) // 실제 API 사용 여부
+  const [selectedStation, setSelectedStation] = useState<AirQualityData | null>(null) // 선택된 측정소
+  const [searchQuery, setSearchQuery] = useState('') // 검색어
+  const [showSearchResults, setShowSearchResults] = useState(false) // 검색 결과 표시 여부
 
   // 실제 대기질 데이터 로드 (서울 전체 25개 측정소)
   useEffect(() => {
@@ -51,6 +54,19 @@ export default function EnvironmentPage() {
     const safety = getMockLocationSafety(currentLocation.lat, currentLocation.lng)
     setLocationSafety(safety)
   }, [currentLocation])
+
+  // 검색 결과 필터링
+  const filteredStations = realAirQualityData.filter((station) =>
+    station.stationName.includes(searchQuery)
+  )
+
+  // 측정소 선택 핸들러
+  const handleSelectStation = (station: AirQualityData) => {
+    setSelectedStation(station)
+    setCurrentLocation({ lat: station.lat!, lng: station.lng! })
+    setSearchQuery('')
+    setShowSearchResults(false)
+  }
 
   // 지도 로드 핸들러
   const handleMapLoad = (map: any, kakao: any) => {
@@ -117,7 +133,12 @@ export default function EnvironmentPage() {
           })
 
           kakao.maps.event.addListener(marker, 'click', () => {
+            // 인포윈도우 열기
             infowindow.open(map, marker)
+            // 해당 측정소 선택 → 오른쪽 카드 업데이트
+            setSelectedStation(station)
+            // 지도 중심 이동
+            setCurrentLocation({ lat: station.lat!, lng: station.lng! })
           })
         }
       })
@@ -169,7 +190,7 @@ export default function EnvironmentPage() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">🌍 실시간 환경 안전 지도</h1>
               <p className="text-sm text-gray-600 mt-1">지금 당장 우리 동네는 안전한가요?</p>
@@ -210,6 +231,55 @@ export default function EnvironmentPage() {
               </button>
             </div>
           </div>
+
+          {/* 검색창 */}
+          {useRealData && (
+            <div className="relative">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="측정소 검색 (예: 강남구, 종로구...)"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value)
+                      setShowSearchResults(e.target.value.length > 0)
+                    }}
+                    onFocus={() => searchQuery && setShowSearchResults(true)}
+                    className="w-full px-4 py-2 pl-10 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                </div>
+              </div>
+
+              {/* 검색 결과 (자동완성) */}
+              {showSearchResults && filteredStations.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto z-20">
+                  {filteredStations.map((station) => {
+                    const airInfo = getAirQualityInfo(station.khaiGrade)
+                    return (
+                      <button
+                        key={station.stationName}
+                        onClick={() => handleSelectStation(station)}
+                        className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between border-b border-gray-100 last:border-b-0 transition-colors"
+                      >
+                        <div>
+                          <div className="font-semibold text-gray-900">{station.stationName}</div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            PM10: {station.pm10Value}㎍/㎥ | PM2.5: {station.pm25Value}㎍/㎥
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">{airInfo.emoji}</span>
+                          <span className={`text-sm font-semibold ${airInfo.color}`}>{airInfo.label}</span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
@@ -262,7 +332,73 @@ export default function EnvironmentPage() {
 
           {/* 안전 체커 */}
           <div className="lg:col-span-1">
-            {locationSafety ? (
+            {selectedStation && useRealData ? (
+              // 선택된 측정소 정보 표시
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <div className="text-center mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{selectedStation.stationName}</h3>
+                  <p className="text-sm text-gray-600">{selectedStation.dataTime}</p>
+                </div>
+
+                {/* 대기질 등급 */}
+                <div
+                  className={`mb-6 p-6 rounded-xl border-2 ${
+                    selectedStation.khaiGrade === 1
+                      ? 'bg-blue-50 border-blue-300'
+                      : selectedStation.khaiGrade === 2
+                        ? 'bg-green-50 border-green-300'
+                        : selectedStation.khaiGrade === 3
+                          ? 'bg-orange-50 border-orange-300'
+                          : 'bg-red-50 border-red-300'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-5xl font-bold mb-2">{selectedStation.khaiValue}</div>
+                    <div
+                      className={`text-lg font-semibold ${
+                        selectedStation.khaiGrade === 1
+                          ? 'text-blue-700'
+                          : selectedStation.khaiGrade === 2
+                            ? 'text-green-700'
+                            : selectedStation.khaiGrade === 3
+                              ? 'text-orange-700'
+                              : 'text-red-700'
+                      }`}
+                    >
+                      {getAirQualityInfo(selectedStation.khaiGrade).emoji}{' '}
+                      {getAirQualityInfo(selectedStation.khaiGrade).label}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 상세 정보 */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-700">미세먼지 (PM10)</span>
+                    <span className="text-lg font-bold text-gray-900">
+                      {selectedStation.pm10Value} ㎍/㎥
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-700">초미세먼지 (PM2.5)</span>
+                    <span className="text-lg font-bold text-gray-900">
+                      {selectedStation.pm25Value} ㎍/㎥
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-700">오존 (O₃)</span>
+                    <span className="text-lg font-bold text-gray-900">{selectedStation.o3Value} ppm</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setSelectedStation(null)}
+                  className="mt-6 w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors"
+                >
+                  ← 목록으로 돌아가기
+                </button>
+              </div>
+            ) : locationSafety ? (
               <SafetyCheckerCard data={locationSafety} />
             ) : (
               <div className="bg-white rounded-lg shadow-lg p-6 text-center">
