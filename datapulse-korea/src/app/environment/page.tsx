@@ -13,9 +13,10 @@ import { fetchSeoulAllStations } from '@/lib/api/environmentApi'
 import type { LocationSafety, AirQualityData } from '@/types/environment'
 
 export default function EnvironmentPage() {
+  // 서울 중심 (시청) 좌표로 시작
   const [currentLocation, setCurrentLocation] = useState({
-    lat: 37.4979,
-    lng: 127.0276,
+    lat: 37.5665,
+    lng: 126.9780,
   })
   const [locationSafety, setLocationSafety] = useState<LocationSafety | null>(null)
   const [showLayers, setShowLayers] = useState({
@@ -221,7 +222,7 @@ export default function EnvironmentPage() {
                 width="100%"
                 height="600px"
                 center={{ lat: currentLocation.lat, lng: currentLocation.lng }}
-                level={5}
+                level={8}
                 onLoad={handleMapLoad}
                 key={`${showLayers.airQuality}-${showLayers.cctv}-${useRealData}-${realAirQualityData.length}`}
               />
