@@ -96,6 +96,14 @@ export default function EnvironmentPage() {
     setShowSearchResults(false)
   }
 
+  // 검색 엔터 키 핸들러
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && filteredStations.length > 0) {
+      // 엔터 누르면 첫 번째 검색 결과 선택
+      handleSelectStation(filteredStations[0])
+    }
+  }
+
   // 지도 로드 핸들러
   const handleMapLoad = (map: any, kakao: any) => {
     // 현재 위치 마커
@@ -273,6 +281,7 @@ export default function EnvironmentPage() {
                       setSearchQuery(e.target.value)
                       setShowSearchResults(e.target.value.length > 0)
                     }}
+                    onKeyDown={handleSearchKeyDown}
                     onFocus={() => searchQuery && setShowSearchResults(true)}
                     className="w-full px-4 py-2 pl-10 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
                   />
