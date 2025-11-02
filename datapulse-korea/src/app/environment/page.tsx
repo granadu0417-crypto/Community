@@ -11,6 +11,7 @@ import {
 } from '@/lib/data/mockEnvironmentData'
 import { fetchSeoulAllStations } from '@/lib/api/environmentApi'
 import { findAllDistrictsByKeyword } from '@/lib/data/seoulLocationMapping'
+import { logger } from '@/lib/utils/logger'
 import type { LocationSafety, AirQualityData } from '@/types/environment'
 
 export default function EnvironmentPage() {
@@ -35,17 +36,17 @@ export default function EnvironmentPage() {
   // 실제 대기질 데이터 로드 (서울 전체 25개 측정소)
   useEffect(() => {
     if (useRealData) {
-      console.log('🔄 실제 데이터 로드 시작...')
+      logger.log('🔄 실제 데이터 로드 시작...')
       setIsLoadingRealData(true)
       // 서울 전체 측정소 데이터 가져오기 (25개, 위치 정보 포함)
       fetchSeoulAllStations()
         .then((data) => {
-          console.log(`✅ 서울 ${data.length}개 측정소 데이터 로드 완료`, data)
+          logger.log(`✅ 서울 ${data.length}개 측정소 데이터 로드 완료`, data)
           setRealAirQualityData(data)
           setIsLoadingRealData(false)
         })
         .catch((error) => {
-          console.error('❌ 실제 대기질 데이터 로드 실패:', error)
+          logger.error('❌ 실제 대기질 데이터 로드 실패:', error)
           setIsLoadingRealData(false)
         })
     }
@@ -64,18 +65,18 @@ export default function EnvironmentPage() {
     const query = searchQuery.trim()
     const results = new Set<AirQualityData>()
 
-    console.log(`🔍 검색: "${query}", 전체 데이터: ${realAirQualityData.length}개`)
+    logger.log(`🔍 검색: "${query}", 전체 데이터: ${realAirQualityData.length}개`)
 
     realAirQualityData.forEach((station) => {
       // 1. 구 이름 직접 검색
       if (station.stationName.includes(query)) {
-        console.log(`  ✓ 구 이름 매칭: ${station.stationName}`)
+        logger.log(`  ✓ 구 이름 매칭: ${station.stationName}`)
         results.add(station)
       }
 
       // 2. 주소 검색
       if (station.addr && station.addr.includes(query)) {
-        console.log(`  ✓ 주소 매칭: ${station.addr}`)
+        logger.log(`  ✓ 주소 매칭: ${station.addr}`)
         results.add(station)
       }
     })
@@ -83,16 +84,16 @@ export default function EnvironmentPage() {
     // 3. 매핑된 키워드 검색 (동, 역, 랜드마크)
     const mappedDistricts = findAllDistrictsByKeyword(query)
     if (mappedDistricts.length > 0) {
-      console.log(`  ➜ 매핑된 구: ${mappedDistricts.join(', ')}`)
+      logger.log(`  ➜ 매핑된 구: ${mappedDistricts.join(', ')}`)
       realAirQualityData.forEach((station) => {
         if (mappedDistricts.includes(station.stationName)) {
-          console.log(`  ✓ 매핑 매칭: ${station.stationName}`)
+          logger.log(`  ✓ 매핑 매칭: ${station.stationName}`)
           results.add(station)
         }
       })
     }
 
-    console.log(`  결과: ${results.size}개`)
+    logger.log(`  결과: ${results.size}개`)
     return Array.from(results)
   })()
 

@@ -5,6 +5,7 @@
 
 import type { AirQualityData, WeatherWarning, DisasterMessage, CCTVData } from '@/types/environment'
 import { getStationLocation, SEOUL_STATIONS } from '@/lib/data/seoulStations'
+import { logger } from '@/lib/utils/logger'
 
 // API 키 가져오기 (환경 변수가 없으면 fallback 값 사용)
 const AIR_KOREA_KEY = process.env.NEXT_PUBLIC_AIR_KOREA_API_KEY || 'bRfZ97B4aD4dhEcDAZTTYL4i0QvA5lrXzStBTwhEZgv2zJLjnLO5BGjR5UIjsSLodBMC2IzGZd6SBz1qwS6KKQ=='
@@ -17,7 +18,7 @@ const DISASTER_KEY = process.env.NEXT_PUBLIC_DISASTER_API_KEY || 'bRfZ97B4aD4dhE
 export async function fetchAirQuality(stationName: string): Promise<AirQualityData | null> {
   try {
     if (!AIR_KOREA_KEY) {
-      console.error('에어코리아 API 키가 설정되지 않았습니다')
+      logger.error('에어코리아 API 키가 설정되지 않았습니다')
       return null
     }
 
@@ -65,7 +66,7 @@ export async function fetchAirQuality(stationName: string): Promise<AirQualityDa
 
     return null
   } catch (error) {
-    console.error('대기질 조회 실패:', error)
+    logger.error('대기질 조회 실패:', error)
     return null
   }
 }
@@ -95,7 +96,7 @@ export async function fetchStationList(addr: string): Promise<any[]> {
     const data = await response.json()
     return data.response?.body?.items || []
   } catch (error) {
-    console.error('측정소 목록 조회 실패:', error)
+    logger.error('측정소 목록 조회 실패:', error)
     return []
   }
 }
@@ -115,7 +116,7 @@ export async function fetchWeatherWarnings(
 ): Promise<WeatherWarning[]> {
   try {
     if (!KMA_KEY) {
-      console.warn('기상청 API 키가 설정되지 않았습니다')
+      logger.warn('기상청 API 키가 설정되지 않았습니다')
       return []
     }
 
@@ -156,7 +157,7 @@ export async function fetchWeatherWarnings(
       content: item.warnMsg || '', // 특보 내용
     }))
   } catch (error) {
-    console.error('기상특보 조회 실패:', error)
+    logger.error('기상특보 조회 실패:', error)
     return []
   }
 }
@@ -167,7 +168,7 @@ export async function fetchWeatherWarnings(
 export async function fetchDisasterMessages(): Promise<DisasterMessage[]> {
   try {
     if (!DISASTER_KEY) {
-      console.warn('긴급재난문자 API 키가 설정되지 않았습니다')
+      logger.warn('긴급재난문자 API 키가 설정되지 않았습니다')
       return []
     }
 
@@ -199,7 +200,7 @@ export async function fetchDisasterMessages(): Promise<DisasterMessage[]> {
       createDate: item.creat_dt || new Date().toISOString(),
     }))
   } catch (error) {
-    console.error('긴급재난문자 조회 실패:', error)
+    logger.error('긴급재난문자 조회 실패:', error)
     return []
   }
 }
@@ -230,7 +231,7 @@ export async function fetchMultipleStationsAirQuality(
     const results = await Promise.all(promises)
     return results.filter((data): data is AirQualityData => data !== null)
   } catch (error) {
-    console.error('여러 측정소 조회 실패:', error)
+    logger.error('여러 측정소 조회 실패:', error)
     return []
   }
 }
@@ -242,7 +243,7 @@ export async function fetchMultipleStationsAirQuality(
 export async function fetchSeoulAllStations(): Promise<AirQualityData[]> {
   try {
     if (!AIR_KOREA_KEY) {
-      console.error('에어코리아 API 키가 설정되지 않았습니다')
+      logger.error('에어코리아 API 키가 설정되지 않았습니다')
       return []
     }
 
@@ -275,7 +276,7 @@ export async function fetchSeoulAllStations(): Promise<AirQualityData[]> {
           const location = getStationLocation(item.stationName)
 
           if (!location) {
-            console.warn(`위치 정보 없음: ${item.stationName}`)
+            logger.warn(`위치 정보 없음: ${item.stationName}`)
             return null
           }
 
@@ -303,7 +304,7 @@ export async function fetchSeoulAllStations(): Promise<AirQualityData[]> {
 
     return []
   } catch (error) {
-    console.error('서울 전체 대기질 조회 실패:', error)
+    logger.error('서울 전체 대기질 조회 실패:', error)
     return []
   }
 }
