@@ -8,9 +8,21 @@ import { getStationLocation, SEOUL_STATIONS } from '@/lib/data/seoulStations'
 import { logger } from '@/lib/utils/logger'
 
 // API 키 가져오기 (환경 변수가 없으면 fallback 값 사용)
-const AIR_KOREA_KEY = process.env.NEXT_PUBLIC_AIR_KOREA_API_KEY || 'bRfZ97B4aD4dhEcDAZTTYL4i0QvA5lrXzStBTwhEZgv2zJLjnLO5BGjR5UIjsSLodBMC2IzGZd6SBz1qwS6KKQ=='
-const KMA_KEY = process.env.NEXT_PUBLIC_KMA_API_KEY || 'bRfZ97B4aD4dhEcDAZTTYL4i0QvA5lrXzStBTwhEZgv2zJLjnLO5BGjR5UIjsSLodBMC2IzGZd6SBz1qwS6KKQ=='
-const DISASTER_KEY = process.env.NEXT_PUBLIC_DISASTER_API_KEY || 'bRfZ97B4aD4dhEcDAZTTYL4i0QvA5lrXzStBTwhEZgv2zJLjnLO5BGjR5UIjsSLodBMC2IzGZd6SBz1qwS6KKQ=='
+// 혹시 인코딩된 키가 들어올 경우를 대비해 디코딩 처리
+const decodeKey = (key: string) => {
+  // %3D%3D를 ==로 변환 (이미 디코딩된 키면 그대로 반환)
+  return key.replace(/%3D/g, '=')
+}
+
+const AIR_KOREA_KEY = decodeKey(
+  process.env.NEXT_PUBLIC_AIR_KOREA_API_KEY || 'bRfZ97B4aD4dhEcDAZTTYL4i0QvA5lrXzStBTwhEZgv2zJLjnLO5BGjR5UIjsSLodBMC2IzGZd6SBz1qwS6KKQ=='
+)
+const KMA_KEY = decodeKey(
+  process.env.NEXT_PUBLIC_KMA_API_KEY || 'bRfZ97B4aD4dhEcDAZTTYL4i0QvA5lrXzStBTwhEZgv2zJLjnLO5BGjR5UIjsSLodBMC2IzGZd6SBz1qwS6KKQ=='
+)
+const DISASTER_KEY = decodeKey(
+  process.env.NEXT_PUBLIC_DISASTER_API_KEY || 'bRfZ97B4aD4dhEcDAZTTYL4i0QvA5lrXzStBTwhEZgv2zJLjnLO5BGjR5UIjsSLodBMC2IzGZd6SBz1qwS6KKQ=='
+)
 
 /**
  * 에어코리아 - 측정소별 실시간 대기질 조회
@@ -257,7 +269,10 @@ export async function fetchSeoulAllStations(): Promise<AirQualityData[]> {
     })
 
     // serviceKey는 인코딩하지 않고 직접 붙임 (2중 인코딩 방지)
-    const response = await fetch(`${url}?serviceKey=${AIR_KOREA_KEY}&${params}`, {
+    const requestUrl = `${url}?serviceKey=${AIR_KOREA_KEY}&${params}`
+    logger.log('요청 URL:', requestUrl)
+
+    const response = await fetch(requestUrl, {
       next: { revalidate: 3600 }, // 1시간 캐시
     })
 
