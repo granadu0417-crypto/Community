@@ -21,7 +21,7 @@ export async function fetchAirQuality(stationName: string): Promise<AirQualityDa
       return null
     }
 
-    const url = 'http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty'
+    const url = 'https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty'
     const params = new URLSearchParams({
       serviceKey: AIR_KOREA_KEY,
       returnType: 'json',
@@ -77,7 +77,7 @@ export async function fetchStationList(addr: string): Promise<any[]> {
   try {
     if (!AIR_KOREA_KEY) return []
 
-    const url = 'http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnList'
+    const url = 'https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnList'
     const params = new URLSearchParams({
       serviceKey: AIR_KOREA_KEY,
       returnType: 'json',
@@ -120,7 +120,7 @@ export async function fetchWeatherWarnings(
     }
 
     // 기상특보목록조회 API
-    const url = 'http://apis.data.go.kr/1360000/WthrWrnInfoService/getWthrWrnList'
+    const url = 'https://apis.data.go.kr/1360000/WthrWrnInfoService/getWthrWrnList'
     const params = new URLSearchParams({
       serviceKey: KMA_KEY,
       numOfRows: '10',
@@ -172,7 +172,7 @@ export async function fetchDisasterMessages(): Promise<DisasterMessage[]> {
     }
 
     // 재난문자 API 엔드포인트 (실제 URL은 발급 후 확인 필요)
-    const url = 'http://apis.data.go.kr/...'
+    const url = 'https://apis.data.go.kr/...'
     const params = new URLSearchParams({
       serviceKey: DISASTER_KEY,
       numOfRows: '10',
@@ -246,7 +246,7 @@ export async function fetchSeoulAllStations(): Promise<AirQualityData[]> {
       return []
     }
 
-    const url = 'http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getCtprvnRltmMesureDnsty'
+    const url = 'https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getCtprvnRltmMesureDnsty'
     const params = new URLSearchParams({
       serviceKey: AIR_KOREA_KEY,
       returnType: 'json',
