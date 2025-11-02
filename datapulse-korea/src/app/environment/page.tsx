@@ -35,16 +35,17 @@ export default function EnvironmentPage() {
   // 실제 대기질 데이터 로드 (서울 전체 25개 측정소)
   useEffect(() => {
     if (useRealData) {
+      console.log('🔄 실제 데이터 로드 시작...')
       setIsLoadingRealData(true)
       // 서울 전체 측정소 데이터 가져오기 (25개, 위치 정보 포함)
       fetchSeoulAllStations()
         .then((data) => {
-          console.log(`✅ 서울 ${data.length}개 측정소 데이터 로드 완료`)
+          console.log(`✅ 서울 ${data.length}개 측정소 데이터 로드 완료`, data)
           setRealAirQualityData(data)
           setIsLoadingRealData(false)
         })
         .catch((error) => {
-          console.error('실제 대기질 데이터 로드 실패:', error)
+          console.error('❌ 실제 대기질 데이터 로드 실패:', error)
           setIsLoadingRealData(false)
         })
     }
@@ -63,14 +64,18 @@ export default function EnvironmentPage() {
     const query = searchQuery.trim()
     const results = new Set<AirQualityData>()
 
+    console.log(`🔍 검색: "${query}", 전체 데이터: ${realAirQualityData.length}개`)
+
     realAirQualityData.forEach((station) => {
       // 1. 구 이름 직접 검색
       if (station.stationName.includes(query)) {
+        console.log(`  ✓ 구 이름 매칭: ${station.stationName}`)
         results.add(station)
       }
 
       // 2. 주소 검색
       if (station.addr && station.addr.includes(query)) {
+        console.log(`  ✓ 주소 매칭: ${station.addr}`)
         results.add(station)
       }
     })
@@ -78,13 +83,16 @@ export default function EnvironmentPage() {
     // 3. 매핑된 키워드 검색 (동, 역, 랜드마크)
     const mappedDistricts = findAllDistrictsByKeyword(query)
     if (mappedDistricts.length > 0) {
+      console.log(`  ➜ 매핑된 구: ${mappedDistricts.join(', ')}`)
       realAirQualityData.forEach((station) => {
         if (mappedDistricts.includes(station.stationName)) {
+          console.log(`  ✓ 매핑 매칭: ${station.stationName}`)
           results.add(station)
         }
       })
     }
 
+    console.log(`  결과: ${results.size}개`)
     return Array.from(results)
   })()
 
@@ -292,7 +300,24 @@ export default function EnvironmentPage() {
               {/* 검색 결과 (자동완성) */}
               {showSearchResults && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto z-20">
-                  {filteredStations.length > 0 ? (
+                  {isLoadingRealData ? (
+                    <div className="px-4 py-6 text-center text-gray-500">
+                      <div className="text-2xl mb-2">⏳</div>
+                      <div className="font-medium text-gray-700">데이터 로딩 중...</div>
+                      <div className="text-sm mt-1">잠시만 기다려주세요</div>
+                    </div>
+                  ) : realAirQualityData.length === 0 ? (
+                    <div className="px-4 py-6 text-center text-gray-500">
+                      <div className="text-2xl mb-2">⚠️</div>
+                      <div className="font-medium text-gray-700">데이터를 불러올 수 없습니다</div>
+                      <div className="text-sm mt-1">
+                        "✅ 실제 데이터" 버튼을 다시 클릭해보세요
+                      </div>
+                      <div className="text-xs mt-2 text-gray-400">
+                        문제가 계속되면 브라우저 콘솔(F12)을 확인해주세요
+                      </div>
+                    </div>
+                  ) : filteredStations.length > 0 ? (
                     filteredStations.map((station) => {
                       const airInfo = getAirQualityInfo(station.khaiGrade)
                       return (
@@ -317,12 +342,15 @@ export default function EnvironmentPage() {
                   ) : (
                     <div className="px-4 py-6 text-center text-gray-500">
                       <div className="text-2xl mb-2">🔍</div>
-                      <div className="font-medium text-gray-700">검색 결과가 없습니다</div>
+                      <div className="font-medium text-gray-700">"{searchQuery}" 검색 결과가 없습니다</div>
                       <div className="text-sm mt-1">
                         구 이름, 동 이름, 지하철역, 랜드마크 등으로 검색해보세요
                       </div>
                       <div className="text-xs mt-2 text-gray-400">
                         예: 강남구, 역삼동, 강남역, 코엑스, 여의도, 홍대 등
+                      </div>
+                      <div className="text-xs mt-2 text-blue-600">
+                        데이터 개수: {realAirQualityData.length}개 측정소
                       </div>
                     </div>
                   )}
