@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { KakaoMap } from '@/components/map'
 import SafetyCheckerCard from '@/components/environment/SafetyCheckerCard'
 import {
@@ -31,6 +31,7 @@ export default function EnvironmentPage() {
   const [useRealData, setUseRealData] = useState(false) // 실제 API 사용 여부
   const [selectedStation, setSelectedStation] = useState<AirQualityData | null>(null) // 선택된 측정소
   const [searchQuery, setSearchQuery] = useState('') // 검색어
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('') // 디바운스된 검색어
   const [showSearchResults, setShowSearchResults] = useState(false) // 검색 결과 표시 여부
 
   // 실제 대기질 데이터 로드 (서울 전체 25개 측정소)
@@ -58,11 +59,20 @@ export default function EnvironmentPage() {
     setLocationSafety(safety)
   }, [currentLocation])
 
-  // 스마트 검색 결과 필터링
-  const filteredStations = (() => {
-    if (!searchQuery.trim()) return []
+  // 검색 디바운싱 (300ms 지연)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300)
 
-    const query = searchQuery.trim()
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // 스마트 검색 결과 필터링 (메모이제이션으로 성능 최적화)
+  const filteredStations = useMemo(() => {
+    if (!debouncedSearchQuery.trim()) return []
+
+    const query = debouncedSearchQuery.trim()
     const results = new Set<AirQualityData>()
 
     logger.log(`🔍 검색: "${query}", 전체 데이터: ${realAirQualityData.length}개`)
@@ -95,23 +105,23 @@ export default function EnvironmentPage() {
 
     logger.log(`  결과: ${results.size}개`)
     return Array.from(results)
-  })()
+  }, [debouncedSearchQuery, realAirQualityData])
 
-  // 측정소 선택 핸들러
-  const handleSelectStation = (station: AirQualityData) => {
+  // 측정소 선택 핸들러 (메모이제이션)
+  const handleSelectStation = useCallback((station: AirQualityData) => {
     setSelectedStation(station)
     setCurrentLocation({ lat: station.lat!, lng: station.lng! })
     setSearchQuery('')
     setShowSearchResults(false)
-  }
+  }, [])
 
-  // 검색 엔터 키 핸들러
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  // 검색 엔터 키 핸들러 (메모이제이션)
+  const handleSearchKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && filteredStations.length > 0) {
       // 엔터 누르면 첫 번째 검색 결과 선택
       handleSelectStation(filteredStations[0])
     }
-  }
+  }, [filteredStations, handleSelectStation])
 
   // 지도 로드 핸들러
   const handleMapLoad = (map: any, kakao: any) => {
