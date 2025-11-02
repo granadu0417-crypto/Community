@@ -6,10 +6,10 @@
 import type { AirQualityData, WeatherWarning, DisasterMessage, CCTVData } from '@/types/environment'
 import { getStationLocation, SEOUL_STATIONS } from '@/lib/data/seoulStations'
 
-// API 키 가져오기
-const AIR_KOREA_KEY = process.env.NEXT_PUBLIC_AIR_KOREA_API_KEY
-const KMA_KEY = process.env.NEXT_PUBLIC_KMA_API_KEY
-const DISASTER_KEY = process.env.NEXT_PUBLIC_DISASTER_API_KEY
+// API 키 가져오기 (환경 변수가 없으면 fallback 값 사용)
+const AIR_KOREA_KEY = process.env.NEXT_PUBLIC_AIR_KOREA_API_KEY || 'bRfZ97B4aD4dhEcDAZTTYL4i0QvA5lrXzStBTwhEZgv2zJLjnLO5BGjR5UIjsSLodBMC2IzGZd6SBz1qwS6KKQ=='
+const KMA_KEY = process.env.NEXT_PUBLIC_KMA_API_KEY || 'bRfZ97B4aD4dhEcDAZTTYL4i0QvA5lrXzStBTwhEZgv2zJLjnLO5BGjR5UIjsSLodBMC2IzGZd6SBz1qwS6KKQ=='
+const DISASTER_KEY = process.env.NEXT_PUBLIC_DISASTER_API_KEY || 'bRfZ97B4aD4dhEcDAZTTYL4i0QvA5lrXzStBTwhEZgv2zJLjnLO5BGjR5UIjsSLodBMC2IzGZd6SBz1qwS6KKQ=='
 
 /**
  * 에어코리아 - 측정소별 실시간 대기질 조회
