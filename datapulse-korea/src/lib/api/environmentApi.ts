@@ -270,17 +270,26 @@ export async function fetchSeoulAllStations(): Promise<AirQualityData[]> {
 
     // serviceKey는 인코딩하지 않고 직접 붙임 (2중 인코딩 방지)
     const requestUrl = `${url}?serviceKey=${AIR_KOREA_KEY}&${params}`
-    logger.log('요청 URL:', requestUrl)
+    console.log('📡 요청 URL:', requestUrl) // 프로덕션에서도 확인 가능하도록 console.log 사용
 
     const response = await fetch(requestUrl, {
       next: { revalidate: 3600 }, // 1시간 캐시
     })
 
+    // 에러 응답 상세 내용 확인
     if (!response.ok) {
-      throw new Error(`API 호출 실패: ${response.status}`)
+      const errorText = await response.text()
+      console.error('❌ API 에러 응답:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: requestUrl,
+        body: errorText.substring(0, 500), // 첫 500자만
+      })
+      throw new Error(`API 호출 실패: ${response.status} - ${errorText.substring(0, 100)}`)
     }
 
     const data = await response.json()
+    console.log('✅ API 응답 성공:', { itemsCount: data.response?.body?.items?.length })
 
     if (data.response?.body?.items && Array.isArray(data.response.body.items)) {
       const items = data.response.body.items
