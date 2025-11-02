@@ -24,7 +24,6 @@ export async function fetchAirQuality(stationName: string): Promise<AirQualityDa
 
     const url = 'https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty'
     const params = new URLSearchParams({
-      serviceKey: AIR_KOREA_KEY,
       returnType: 'json',
       numOfRows: '1',
       pageNo: '1',
@@ -33,7 +32,8 @@ export async function fetchAirQuality(stationName: string): Promise<AirQualityDa
       ver: '1.0',
     })
 
-    const response = await fetch(`${url}?${params}`, {
+    // serviceKey는 인코딩하지 않고 직접 붙임 (2중 인코딩 방지)
+    const response = await fetch(`${url}?serviceKey=${AIR_KOREA_KEY}&${params}`, {
       next: { revalidate: 3600 }, // 1시간 캐시
     })
 
@@ -80,14 +80,14 @@ export async function fetchStationList(addr: string): Promise<any[]> {
 
     const url = 'https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnList'
     const params = new URLSearchParams({
-      serviceKey: AIR_KOREA_KEY,
       returnType: 'json',
       numOfRows: '100',
       pageNo: '1',
       addr: addr,
     })
 
-    const response = await fetch(`${url}?${params}`, {
+    // serviceKey는 인코딩하지 않고 직접 붙임 (2중 인코딩 방지)
+    const response = await fetch(`${url}?serviceKey=${AIR_KOREA_KEY}&${params}`, {
       next: { revalidate: 86400 }, // 1일 캐시
     })
 
@@ -123,7 +123,6 @@ export async function fetchWeatherWarnings(
     // 기상특보목록조회 API
     const url = 'https://apis.data.go.kr/1360000/WthrWrnInfoService/getWthrWrnList'
     const params = new URLSearchParams({
-      serviceKey: KMA_KEY,
       numOfRows: '10',
       pageNo: '1',
       dataType: 'JSON',
@@ -134,7 +133,8 @@ export async function fetchWeatherWarnings(
       params.append('areaCode', areaCode)
     }
 
-    const response = await fetch(`${url}?${params}`, {
+    // serviceKey는 인코딩하지 않고 직접 붙임 (2중 인코딩 방지)
+    const response = await fetch(`${url}?serviceKey=${KMA_KEY}&${params}`, {
       next: { revalidate: 600 }, // 10분 캐시 (특보는 실시간 발표)
     })
 
@@ -175,13 +175,13 @@ export async function fetchDisasterMessages(): Promise<DisasterMessage[]> {
     // 재난문자 API 엔드포인트 (실제 URL은 발급 후 확인 필요)
     const url = 'https://apis.data.go.kr/...'
     const params = new URLSearchParams({
-      serviceKey: DISASTER_KEY,
       numOfRows: '10',
       pageNo: '1',
       type: 'json',
     })
 
-    const response = await fetch(`${url}?${params}`, {
+    // serviceKey는 인코딩하지 않고 직접 붙임 (2중 인코딩 방지)
+    const response = await fetch(`${url}?serviceKey=${DISASTER_KEY}&${params}`, {
       next: { revalidate: 300 }, // 5분 캐시
     })
 
@@ -249,7 +249,6 @@ export async function fetchSeoulAllStations(): Promise<AirQualityData[]> {
 
     const url = 'https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getCtprvnRltmMesureDnsty'
     const params = new URLSearchParams({
-      serviceKey: AIR_KOREA_KEY,
       returnType: 'json',
       numOfRows: '100', // 서울 25개 측정소 모두 가져오기
       pageNo: '1',
@@ -257,7 +256,8 @@ export async function fetchSeoulAllStations(): Promise<AirQualityData[]> {
       ver: '1.0',
     })
 
-    const response = await fetch(`${url}?${params}`, {
+    // serviceKey는 인코딩하지 않고 직접 붙임 (2중 인코딩 방지)
+    const response = await fetch(`${url}?serviceKey=${AIR_KOREA_KEY}&${params}`, {
       next: { revalidate: 3600 }, // 1시간 캐시
     })
 
