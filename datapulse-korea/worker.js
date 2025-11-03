@@ -75,19 +75,22 @@ async function fetchAirQualitySeoul(env) {
   }
 
   // HTTP 사용 (원본 API 엔드포인트)
-  const apiUrl = new URL('http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getCtprvnRltmMesureDnsty')
+  const baseUrl = 'http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getCtprvnRltmMesureDnsty'
 
-  // 파라미터 추가 (serviceKey는 자동으로 URL 인코딩됨)
-  apiUrl.searchParams.append('serviceKey', apiKey)
-  apiUrl.searchParams.append('returnType', 'json')
-  apiUrl.searchParams.append('numOfRows', '100')
-  apiUrl.searchParams.append('pageNo', '1')
-  apiUrl.searchParams.append('sidoName', '서울')
-  apiUrl.searchParams.append('ver', '1.0')
+  // serviceKey는 인코딩하지 않고 직접 붙임 (일부 공공데이터 API는 인코딩된 키를 거부)
+  const params = new URLSearchParams({
+    returnType: 'json',
+    numOfRows: '100',
+    pageNo: '1',
+    sidoName: '서울',
+    ver: '1.0',
+  })
 
-  console.log('📡 요청 URL:', apiUrl.toString())
+  const requestUrl = `${baseUrl}?serviceKey=${apiKey}&${params.toString()}`
 
-  const response = await fetch(apiUrl.toString())
+  console.log('📡 요청 URL:', requestUrl)
+
+  const response = await fetch(requestUrl)
 
   if (!response.ok) {
     const errorText = await response.text()
@@ -120,16 +123,20 @@ async function fetchAirQualityStation(env, stationName) {
     return jsonResponse({ error: 'API 키가 설정되지 않았습니다' }, 500)
   }
 
-  const apiUrl = new URL('http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty')
-  apiUrl.searchParams.append('serviceKey', apiKey)
-  apiUrl.searchParams.append('returnType', 'json')
-  apiUrl.searchParams.append('numOfRows', '1')
-  apiUrl.searchParams.append('pageNo', '1')
-  apiUrl.searchParams.append('stationName', stationName)
-  apiUrl.searchParams.append('dataTerm', 'DAILY')
-  apiUrl.searchParams.append('ver', '1.0')
+  const baseUrl = 'http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty'
 
-  const response = await fetch(apiUrl.toString())
+  const params = new URLSearchParams({
+    returnType: 'json',
+    numOfRows: '1',
+    pageNo: '1',
+    stationName: stationName,
+    dataTerm: 'DAILY',
+    ver: '1.0',
+  })
+
+  const requestUrl = `${baseUrl}?serviceKey=${apiKey}&${params.toString()}`
+
+  const response = await fetch(requestUrl)
 
   if (!response.ok) {
     const errorText = await response.text()
@@ -154,17 +161,22 @@ async function fetchWeatherWarnings(env, areaCode) {
     return jsonResponse({ error: 'API 키가 설정되지 않았습니다' }, 500)
   }
 
-  const apiUrl = new URL('http://apis.data.go.kr/1360000/WthrWrnInfoService/getWthrWrnList')
-  apiUrl.searchParams.append('serviceKey', apiKey)
-  apiUrl.searchParams.append('numOfRows', '10')
-  apiUrl.searchParams.append('pageNo', '1')
-  apiUrl.searchParams.append('dataType', 'JSON')
+  const baseUrl = 'http://apis.data.go.kr/1360000/WthrWrnInfoService/getWthrWrnList'
 
-  if (areaCode) {
-    apiUrl.searchParams.append('areaCode', areaCode)
+  const paramsObj = {
+    numOfRows: '10',
+    pageNo: '1',
+    dataType: 'JSON',
   }
 
-  const response = await fetch(apiUrl.toString())
+  if (areaCode) {
+    paramsObj.areaCode = areaCode
+  }
+
+  const params = new URLSearchParams(paramsObj)
+  const requestUrl = `${baseUrl}?serviceKey=${apiKey}&${params.toString()}`
+
+  const response = await fetch(requestUrl)
 
   if (!response.ok) {
     const errorText = await response.text()
@@ -189,14 +201,18 @@ async function fetchStations(env, addr) {
     return jsonResponse({ error: 'API 키가 설정되지 않았습니다' }, 500)
   }
 
-  const apiUrl = new URL('http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnList')
-  apiUrl.searchParams.append('serviceKey', apiKey)
-  apiUrl.searchParams.append('returnType', 'json')
-  apiUrl.searchParams.append('numOfRows', '100')
-  apiUrl.searchParams.append('pageNo', '1')
-  apiUrl.searchParams.append('addr', addr)
+  const baseUrl = 'http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnList'
 
-  const response = await fetch(apiUrl.toString())
+  const params = new URLSearchParams({
+    returnType: 'json',
+    numOfRows: '100',
+    pageNo: '1',
+    addr: addr,
+  })
+
+  const requestUrl = `${baseUrl}?serviceKey=${apiKey}&${params.toString()}`
+
+  const response = await fetch(requestUrl)
 
   if (!response.ok) {
     const errorText = await response.text()
